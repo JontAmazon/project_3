@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Oct  8 11:12:51 2019
-
-@author: jonat
+    NOTE: to run a python program with 3 processes:
+        mpirun -np 3 python filename.py
 """
+import numpy as np
+import scipy.linalg as sl
+from mpi4py import MPI
 
-nproc = 3
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+nproc = comm.Get_size()
+
+
+
+
