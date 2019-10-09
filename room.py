@@ -3,100 +3,109 @@ import numpy as np
 
 
 class Room(object):
-    
-    def __init__(self, room, d_x = 1/3, omega=0.8, iters=100):
-        ''' initalizes the room object for the corresponding 
-        '''
+    def __init__(self, room, N=1/3, omega=0.8, heater_temp=40, window_temp=5, wall_temp=15):
         self.room = room
-
-        # Is Kelvin really necessary? Laplace is linear and since
-        # only the difference between the nodal temperatures are
-        # of relevance for the dynamics (and thus constants are removed)
-        # , it's all interchangable right?
-        self.wall_temp = 15 #deg Celsius
-        self.heater_temp = 40 #deg Celsius
-        self.window_temp = 5 #deg Celsius
-        self.d_x = d_x
+        self.N = N
         self.omega = omega
-        self.iters = iters
+        self.heater_temp = heater_temp
+        self.window_temp = window_temp
+        self.wall_temp = wall_temp
 
-        assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
-        if room == 1:
-            self.A,self.b,self.U = self.room_omega_1()
-        elif room == 2:
-            self.A,self.b,self.U = self.room_omega_2()
-        else:
-            self.A,self.b,self.U = self.room_omega_3()
+    def __call__(self,parameters):
+        test = 2
+        test = 1
 
-    def room_omega_1(self):
-        ''' generates room 1 aka omega_1
+
+"""
+    Notes for Room1, Room2 and Room3:
+    
+    1. Since the A-matrix is CONSTANT, and b is partly constant throughout the
+    solving of the problem, we calculate the bulk of these matrices right away,
+    in their __init__() functions.
+    b is then updated in every iteration, as the vectors gamma1 and gamma2 change.
+    This is done in their respective solve() functions.
+    
+    2. Note that the vectors gamma1 and gamma2 store different things at
+    different times. When a room2-object returns gamma1 and gamma2, they contain
+    the derivatives of the temperature at these two boundaries. When room1-
+    and room3-objects return these vectors, they store temperature values.
+"""
+
+'''
+    TEMPORARY NOTE TO SELF:    Nog Spara vektorerna som håller index för de platser där b måste uppdateras.
+'''
+
+
+class Room1(Room):
+    def __init__(self, room, N=1/3, omega=0.8, heater_temp=40, window_temp=5, wall_temp=15):
+        super(room, N, omega, heater_temp, window_temp, wall_temp)
         
-                      cool wall
-                 ____________________
-                |                    >
-                |                    >
-                |       u[i-N]       >
-                |          |         >
-       hot wall | u[i-1]-u[i]-u[i+1] > gamma 1
-                |          |         >
-                |       u[i+N]       >
-                |                    >
-                |____________________>
-                       cool wall        
-        '''
-        U = np.ones((1/self.d_x-1)**2)*(15+15+15+40)/4
-        # A=
-        # B =
-        # U = uvektorn för rum 1
-        return A,b,U
-    def room_omega_2(self):
-        ''' generates room 2 aka omega_2
+        """ TODO: implementera A och b """
+        self.A = 42
+        self.b = 42
         
-                      hot wall
-                 ____________________
-                |                    >
-                |                    >
-                |                    >
-                |                    >
-      cool wall |                    > gamma 2
-                |                    >
-                |       u[i-N]       >
-                |          |         >
-                | u[i-1]-u[i]-u[i+1] >
-                <          |         |
-                <       u[i+N]       |
-                <                    |
-                <                    |
-        gamma 1 <                    |  cool wall
-                <                    |
-                <                    |
-                <                    |
-                <____________________|
-                         window
-        '''
-        # A=
-        # B =
-        # U
-        U = np.ones((1/self.d_x-1)*(2/self.d_x -1))*(5+15+15+15+15+40)/6
-        return A,b,U
-    def room_omega_3(self):
-        ''' generates room 1 aka omega_3
-                
-                      cool wall
-                 ____________________
-                <                    |
-                <                    |
-                <       u[i-N]       |
-                <          |         |  
-       gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
-                <          |         |
-                <       u[i+N]       |
-                <                    |
-                <____________________|
-                         window
-        '''
-        # A=
-        # B =
-        # U =
-        U = np.ones((1/self.d_x-1)**2)*(15+15+15+40)/4
-        return A,b,U
+    def solve(self, gamma1):
+        """ Solves the heating equation in room 1 with Neumann conditions,
+            with temperature derivatives given by the vector gamma1. """
+            
+        #returns gamma1, e.g. the temperature at gamma1, to be used by room 2
+        #                     in the next iteration.
+        pass
+        
+class Room2(Room):
+    def __init__(self, room, gamma1_guess, gamma2_guess, N=1/3, omega=0.8, \
+                 heater_temp=40, window_temp=5, wall_temp=15):
+        super(room, N, omega, heater_temp, window_temp, wall_temp)
+        self.gamma1 = gamma1_guess #gissar att dessa är bra att ha som inparametrar, inte säker.
+        self.gamma2 = gamma2_guess #gissar att dessa är bra att ha som inparametrar, inte säker.
+        
+        """NOTE: Detta (A och b) kommer jag Jonte att implementera STRAX:"""
+        self.A = 42
+        self.b = 42
+        
+    def solve(self, gamma1, gamma2):
+        """ Solves the heating equation in room 2 with Dirichlet conditions,
+            with temperatures given by the vectors gamma1 and gamma2. """
+
+        #returns gamma1 and gamma2, e.g. the temperature derivatives
+        #                                at gamma1 and gamma2.
+        pass
+
+class Room3(Room):
+    def __init__(self, room, N=1/3, omega=0.8, heater_temp=40, window_temp=5, gammaN=15):
+        super(room, N, omega, heater_temp, window_temp, gammaN)
+        
+        """ TODO: implementera A och b """
+        self.A = 42
+        self.b = 42
+        
+    def solve(self, gamma2):
+        """ Solves the heating equation in room 3 with Neumann conditions,
+            with temperature derivatives given by the vector gamma2. """
+
+        #returns gamma2, e.g. the temperature at gamma2, to be used by room 2
+        #                     in the next iteration.
+        pass
+    
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
