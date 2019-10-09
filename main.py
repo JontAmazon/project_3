@@ -8,9 +8,20 @@ import scipy.linalg as sl
 from mpi4py import MPI
 
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-nproc = comm.Get_size()
+
+class Room(object):
+    def __init__(self,parameters):
+
+    def __call__(self,parameters):
+
+
+
+if __name__=='__main__':
+    
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    nproc = comm.Get_size()
+
 
 
 
