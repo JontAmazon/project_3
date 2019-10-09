@@ -29,7 +29,24 @@ class Room(object):
             self.A,self.b,self.U = self.room_omega_3()
 
     def room_omega_1(self):
-        ''' generates room 1 aka omega_1
+        
+        # A=
+        # B =
+        # U = uvektorn för rum 1
+        return A,b,U
+    def room_omega_2(self):
+        
+        # A=
+        # B =
+
+        return A,b,U
+    def room_omega_3(self):
+        
+        # A=
+        # B =
+        return A,b,U
+
+''' generates room 1 aka omega_1
         
                       cool wall
                  ____________________
@@ -44,12 +61,9 @@ class Room(object):
                 |____________________>
                        cool wall        
         '''
-        # A=
-        # B =
-        # U = uvektorn för rum 1
-        return A,b,U
-    def room_omega_2(self):
-        ''' generates room 2 aka omega_2
+
+
+''' generates room 2 aka omega_2
         
                       hot wall
                  ____________________
@@ -73,12 +87,8 @@ class Room(object):
                 <____________________|
                          window
         '''
-        # A=
-        # B =
 
-        return A,b,U
-    def room_omega_3(self):
-        ''' generates room 1 aka omega_3
+        ''' generates room 3 aka omega_3
                 
                       cool wall
                  ____________________
@@ -93,7 +103,3 @@ class Room(object):
                 <____________________|
                          window
         '''
-        # A=
-        # B =
-        return A,b,U
-        
