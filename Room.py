@@ -27,11 +27,11 @@ class Room(object):
                  ____________________
                 |                    >
                 |                    >
-                |                    >
-                |                    >
-       hot wall |                    > gamma 1
-                |                    >
-                |                    >
+                |       u[i-N]       >
+                |          |         >
+       hot wall | u[i-1]-u[i]-u[i+1] > gamma 1
+                |          |         >
+                |       u[i+N]       >
                 |                    >
                 |____________________>
                        cool wall        
@@ -51,14 +51,14 @@ class Room(object):
                 |                    >
       cool wall |                    > gamma 2
                 |                    >
-                |                    >
-                |                    >
-                |                    >
-                <                    |
+                |       u[i-N]       >
+                |          |         >
+                | u[i-1]-u[i]-u[i+1] >
+                <          |         |
+                <       u[i+N]       |
                 <                    |
                 <                    |
         gamma 1 <                    |  cool wall
-                <                    |
                 <                    |
                 <                    |
                 <                    |
@@ -76,11 +76,11 @@ class Room(object):
                  ____________________
                 <                    |
                 <                    |
-                <                    |
-        gamma 2 <                    |  hot wall
-                <                    |
-                <                    |
-                <                    |
+                <       u[i-N]       |
+                <          |         |  
+       gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
+                <          |         |
+                <       u[i+N]       |
                 <                    |
                 <____________________|
                          window
