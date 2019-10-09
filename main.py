@@ -22,11 +22,14 @@ if __name__=='__main__':
                         dest='omega',
                         type = float,
                         help='Relaxation parameters')
-        args = argparser.parse_args()
-    optional_group.add_argument('--iters', '-i'
+    optional_group.add_argument('--iters', '-i',
                         dest='iters',
                         type = int,
                         help='Number of iterations')
+    optional_group.add_argument('--wall_temp', '-w',
+                        dest='wall_temp',
+                        type = float,
+                        help='Temperature of normal wall')
     args = argparser.parse_args()
 
     kwargs = dict()
@@ -43,8 +46,13 @@ if __name__=='__main__':
     comm = MPI.COMM_WORLD
     room = comm.Get_rank() + 1
     nproc = comm.Get_size()
-    room_object = Room(**kwargs,room=room)                
-
+    room_object = room.Room(**kwargs,room=room)
+    U = room_object.solve()     
+    if room==1:
+        U_2 = comm.recv(source=2)
+        U_3 = comm.recv(source=3)           
+    else:
+        comm.send(U,dest=1)
 
     if room == 0:
         print('my rank is ' + str(room) +'\n')

@@ -100,3 +100,5 @@ class Room(object):
         # U =
         U = np.ones((1/self.d_x-1)**2)*(15+15+15+40)/4
         return A,b,U
+
+        
