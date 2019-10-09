@@ -44,9 +44,10 @@ class Room(object):
                 |____________________>
                        cool wall        
         '''
+        U = np.ones((1/self.d_x-1)**2)*(15+15+15+40)/4
         # A=
         # B =
-        # U = uvektorn för rum 1
+        # U = uvektorn för rum 1        
         return A,b,U
     def room_omega_2(self):
         ''' generates room 2 aka omega_2
@@ -75,7 +76,8 @@ class Room(object):
         '''
         # A=
         # B =
-
+        # U
+        U = np.ones((1/self.d_x-1)*(2/self.d_x -1))*(5+15+15+15+15+40)/6
         return A,b,U
     def room_omega_3(self):
         ''' generates room 1 aka omega_3
@@ -95,5 +97,6 @@ class Room(object):
         '''
         # A=
         # B =
+        # U =
+        U = np.ones((1/self.d_x-1)**2)*(15+15+15+40)/4
         return A,b,U
-        

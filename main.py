@@ -54,6 +54,7 @@ if __name__=='__main__':
     else:
         comm.send(U,dest=1)
 
+
     if room == 0:
         print('my rank is ' + str(room) +'\n')
         comm.send('blebleble',dest=1,tag=11)
