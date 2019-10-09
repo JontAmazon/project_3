@@ -10,6 +10,9 @@ class Room(object):
         self.heater_temp = heater_temp
         self.window_temp = window_temp
         self.wall_temp = wall_temp
+        
+        self.u = None
+        self.u_km1 = None #used for relaxation.
 
     def __call__(self,parameters):
         test = 2
