@@ -11,7 +11,7 @@ import argparse
 
 
 class Room(object):
-    def __init__(self,dx=1/3,omega):
+    def __init__(self, dx=1/20, omega=0.8,):
         test = 2
 
 
@@ -51,19 +51,19 @@ if __name__=='__main__':
         kwargs['iter'] = args.iter
 
     comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
+    room = comm.Get_rank() + 1
     nproc = comm.Get_size()
     print('arg1: ' + str(arg1))
-    room1 = Room(delta=1/10,rank)                
+    room_object = Room(**kwargs,room)                
 
 
-    if rank == 0:
-        print('my rank is ' + str(rank) +'\n')
+    if room == 0:
+        print('my rank is ' + str(room) +'\n')
         comm.send('blebleble',dest=1,tag=11)
-    elif rank == 1:
+    elif room == 1:
         
         data = comm.recv(source=0,tag=11)
-        print('my rank is ' + str(rank) +'and i just received the string ' + str(data) + '\n')
+        print('my rank is ' + str(room) +'and i just received the string ' + str(data) + '\n')
 
 
 
