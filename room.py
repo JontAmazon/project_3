@@ -1,18 +1,26 @@
 # -*- coding: utf-8 -*-
-
+import numpy as np
 
 
 class Room(object):
     
-    def __init__(self,kwargs, rank, d_x = 1/3):
+    def __init__(self, room, d_x = 1/3, omega=0.8, iters=100):
         ''' initalizes the room object for the corresponding 
         '''
-        self.room = rank + 1
-        self.wall_temp = 273.15 + 15 #deg kelvin
-        self.heater_temp = 273.15 + 40 #deg kelvin
-        self.window_temp = 273.15 + 5 #deg kelvin
+        self.room = room
 
-        assert (rank < 4),'The rank is too high, you might be trying to initiate too many instances'
+        # Is Kelvin really necessary? Laplace is linear and since
+        # only the difference between the nodal temperatures are
+        # of relevance for the dynamics (and thus constants are removed)
+        # , it's all interchangable right?
+        self.wall_temp = 15 #deg Celsius
+        self.heater_temp = 40 #deg Celsius
+        self.window_temp = 5 #deg Celsius
+        self.d_x = d_x
+        self.omega = omega
+        self.iters = iters
+
+        assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
         if room == 1:
             self.A,self.b,self.U = self.room_omega_1()
         elif room == 2:
@@ -20,7 +28,7 @@ class Room(object):
         else:
             self.A,self.b,self.U = self.room_omega_3()
 
-    def room_omega_1():
+    def room_omega_1(self):
         ''' generates room 1 aka omega_1
         
                       cool wall
@@ -36,11 +44,12 @@ class Room(object):
                 |____________________>
                        cool wall        
         '''
+        U = np.ones((1/self.d_x-1)**2)*(15+15+15+40)/4
         # A=
         # B =
         # U = uvektorn för rum 1
         return A,b,U
-    def room_omega_2():
+    def room_omega_2(self):
         ''' generates room 2 aka omega_2
         
                       hot wall
@@ -68,8 +77,9 @@ class Room(object):
         # A=
         # B =
         # U
+        U = np.ones((1/self.d_x-1)*(2/self.d_x -1))*(5+15+15+15+15+40)/6
         return A,b,U
-    def room_omega_3():
+    def room_omega_3(self):
         ''' generates room 1 aka omega_3
                 
                       cool wall
@@ -88,4 +98,5 @@ class Room(object):
         # A=
         # B =
         # U =
+        U = np.ones((1/self.d_x-1)**2)*(15+15+15+40)/4
         return A,b,U

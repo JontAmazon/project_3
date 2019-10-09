@@ -10,16 +10,6 @@ import argparse
 
 import room
 
-class Room(object):
-    def __init__(self, dx=1/20, omega=0.8,):
-        test = 2
-
-
-    def __call__(self,parameters):
-        test = 2
-        test = 1
-
-
 
 if __name__=='__main__':
     argparser = argparse.ArgumentParser(description='Solve a heat distribution problem for an apartment')
