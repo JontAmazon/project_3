@@ -8,7 +8,7 @@ import scipy.linalg as sl
 from mpi4py import MPI
 import argparse
 
-
+import room
 
 class Room(object):
     def __init__(self, dx=1/20, omega=0.8,):
@@ -24,17 +24,17 @@ class Room(object):
 if __name__=='__main__':
     argparser = argparse.ArgumentParser(description='Solve a heat distribution problem for an apartment')
     optional_group = argparser.add_argument_group('Optional')
-    optional_group.add_argument('--delta', '-d',
-                        dest='delta',
+    optional_group.add_argument('--d_x', '-d',
+                        dest='d_x',
                         type=float,
                         help='Distance between grid points')
-    optional_group.add_argument('--omega', '-o'
+    optional_group.add_argument('--omega', '-o',
                         dest='omega',
                         type = float,
                         help='Relaxation parameters')
         args = argparser.parse_args()
-    optional_group.add_argument('--iter', '-i'
-                        dest='iter',
+    optional_group.add_argument('--iters', '-i'
+                        dest='iters',
                         type = int,
                         help='Number of iterations')
     args = argparser.parse_args()
@@ -47,14 +47,13 @@ if __name__=='__main__':
     if args.omega:
         kwargs['omega'] = args.omega
         print(args.omega)
-    if args.iter:
-        kwargs['iter'] = args.iter
+    if args.iters:
+        kwargs['iters'] = args.iters
 
     comm = MPI.COMM_WORLD
     room = comm.Get_rank() + 1
     nproc = comm.Get_size()
-    print('arg1: ' + str(arg1))
-    room_object = Room(**kwargs,room)                
+    room_object = Room(**kwargs,room=room)                
 
 
     if room == 0:
