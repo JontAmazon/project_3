@@ -123,34 +123,39 @@ class Room(object):
                 gamma_1_temp = u[int(1/dx-2)::int(1/dx-1)]
                 gamma_1 = gamma_1_temp - gamma_1
                 com.send(gamma_1,dest=2)
-
+                u = self.omega*u + (1-self.omega)*self.u_km1
+                self.u_km1=u
+            self.u = u
         if room == 2:
-            gamma_1 = self.com.recv(source=1)
-            gamma_2 = self.com.recv(source=3)
-            
-            
-            U = sl.solve(self.A,self.b)
-            
+            for i in range(self.iters):
+                gamma_1 = self.com.recv(source=1)
+                gamma_2 = self.com.recv(source=3)
 
-            # Send gamma_1 and gamma_2 to their respective rooms. 
-            # If we have an even amount of internal points in the x
-            # dimension, we have to skip one row that lies on the same
-            # y-value as room 1's 'northern' wall & room 2's southern wall
-            #  since these don't contribute to gamma
-            if (1/dx-1) % 2 == 0:
-                gamma_1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
-                gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                gamma_2_temp = gamma_2_temp[:-int(1/dx-2)]
-            else: 
-                gamma_1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
-                gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                gamma_2_temp = gamma_2_temp[:-int(1/dx-1)]
-            
-            gamma_1 = gamma_1 - gamma_1_temp
-            gamma_2 = gamma_2 - gamma_2_temp
-            com.send(gamma_1,dest=1)
-            com.send(gamma_2,dest=3)
 
+                U = sl.solve(self.A,self.b)
+
+
+                # Send gamma_1 and gamma_2 to their respective rooms. 
+                # If we have an even amount of internal points in the x
+                # dimension, we have to skip one row that lies on the same
+                # y-value as room 1's 'northern' wall & room 2's southern wall
+                #  since these don't contribute to gamma
+                if (1/dx-1) % 2 == 0:
+                    gamma_1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
+                    gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                    gamma_2_temp = gamma_2_temp[:-int(1/dx-2)]
+                else: 
+                    gamma_1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
+                    gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                    gamma_2_temp = gamma_2_temp[:-int(1/dx-1)]
+
+                gamma_1 = gamma_1 - gamma_1_temp
+                gamma_2 = gamma_2 - gamma_2_temp
+                com.send(gamma_1,dest=1)
+                com.send(gamma_2,dest=3)
+                U = self.omega*U + (1-self.omega)*self.u_km1
+                self.u_km1 = U
+            self.u = U
 
         if room == 3:
             gamma_2 = np.ones(1/dx - 1)*(40+15+15+15)/4
@@ -165,6 +170,9 @@ class Room(object):
                 gamma_2_temp = u[0::int(1/dx-1)]
                 gamma_2 =  gamma_2_temp - gamma_2
                 com.send(gamma_2,dest=2)
+                u = self.omega*u + (1-self.omega)*self.u_km1
+                self.u_km1=u
+            self.u = u
 
 
  '''       
