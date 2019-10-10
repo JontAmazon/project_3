@@ -22,31 +22,23 @@ class Room(object):
         self.u = None
         self.u_km1 = None #used for relaxation.
 
-        #Initializes A and b for room 1, 2 or 3:
+        #Create A (which is constant!) for room 1, 2 or 3.
         if room == 1:
-            self.init_A_and_b_room1()
-        elif room == 2:
-            self.init_A_and_b_room2()
-        else:
-            self.init_A_and_b_room3()
+            self.create_A_and_b_room1()
+        if room == 2:
+            self.create_A_and_b_room2()
+        if room == 3:
+            self.create_A_and_b_room3()
 
-    """
-        Since A and b are partly constant throughout the
-        solving of the problem, we calculate the bulk of these matrices right away,
-        in their respective room_omega_n() functions.
-        A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
-        This is done in the solve() function.
-    """
-    def init_A_and_b_room1(self):
+
+    def create_A_and_b_room1(self):
+        """ Creates the A- and b-matrix for room 1, the A-matrix being
+            constant and the second one being mostly constant.
+        """
         N = int(round(1/self.dx)) - 1   #Number of columns and rows of nodes
-        
-        A = np.zeros(N)
         size = N*N
-        
-        """
-            Create A:
-        """
-        
+                
+        """ Create A """
         #Fill the diagonal and second super/subdiagonals of A
         diagonals = np.zeros(size)
         diagonals[0] = -4
@@ -73,44 +65,52 @@ class Room(object):
                 for j in range(i*N + 1, i*N + N - 1):
                     A[j, j - 1] = 1
                     A[j, j + 1] = 1
+<<<<<<< HEAD
+                
+        """ Create b """
+        b = np.zeros(N)
+=======
         
         """
             Create b:
         """
         
         #Initiate the b-vector
-        b = np.zeros([N, 1])
+        b = np.zeros([size, 1])
+>>>>>>> 29f3acfd8752f8b8e462626d777320d78f493af6
         
         #Subtract the top boundary nodes with self.wall_temp
         for i in range(0, N):
             b[i] = b[i] - self.wall_temp
         
         #Subtract the bottom boundary nodes with self.wall_temp
-        for i in range(0, N):
+        for i in range(size, size-N):
             b[i] = b[i] - self.wall_temp
         
         #Subtract the most-right (near the right boundary) nodes with the 
         #corresponding value given for the node by Neumann-conditions
         for i in range(1, N+1):
-            b[i*N - 1] = b[i*N - 1] - 1 #TODO: ADD THE NEUMANN VALUES
+            b[i*N - 1] = b[i*N - 1] - self.gamma1[i-1]
             
+        #Subtract the most-left (near the left boundary elements) with self.heater_temp
+        for i in range(0, N):
+            b[i*N] = b[i*N] - self.heater_temp
+        
+        return A, b
         
         
-        
-        
-
-        
-    def init_A_and_b_room2(self):
-        """ Initializes the matrices A and b for room 2. 
-            For room 2, b will change in every iteration, while A is CONSTANT """
+    def create_A_and_b_room2(self):
+        """ Creates the A- and b-matrix for room 2, the A-matrix being
+            constant and the second one being mostly constant.
+        """
         height = 2                          #heigth of room 2
         width = 1                           #width  of room 2
         M = int(round(height/self.dx)) - 1  #number of rows of nodes
         N = int(round(width/self.dx)) - 1   #number of cols of nodes
         self.N = N  #used later
         size = M*N
-        
-        # [Building A].
+                
+        """ Create A """
         # The bulk of A is very close to a toeplitz matrix with 5 diagonals.
         first_row = np.zeros(size)
         first_row[0] = -4
@@ -137,10 +137,10 @@ class Room(object):
         
         
         # [Building b].
-        # Room 2 has 6 different (Dirichlet) boundary conditions. Of these, 2
-        # change in every iteration, while 4 are constant. Here we initialize
-        # b, considering only the 4 constant boundary conditions, while the
-        # other 2 are uppdated in every iteration in solve().
+        # Room 2 has 6 different (Dirichlet) boundaries. Of these, 2 change in every
+        # iteration, while 4 are constant. Here we initialize b,considering only the 
+        # 4 constant boundary conditions, while the other 2 are considered in 
+        # update_b_room2(), called in every iteration in solve().
         self.b = np.zeros(size)
         
         # Upper bounndary:
@@ -166,21 +166,23 @@ class Room(object):
             index += N
         
 
-    def init_A_and_b_room3(self):
+    def create_A_and_b_room3(self):
         self.A = 'hej'
     
-    def update_A_and_b_room1(self, gamma1):
+    """ The b-matrix depends on the vectors gamma1 and gamma2 and is updated
+        in every iteration, within the solve-function.
+    """
+    def update_b_room1(self, gamma1):
         pass
 
-    def update_A_and_b_room2(self, gamma1, gamma2):
+    def update_b_room2(self, gamma1, gamma2):
         """ Updates the b-matrix for room 2, according to values in gamma1 and
             gamma2. Note that for room 2, the A-matrix is constant.
-        """
-        N = self.N
-        
+        """        
         # Upper right boundary:
         # Every N nodes are effected by the upper right boundary, and in total 
         # N nodes are effected. The first effected node is the (N-1):th node.
+        N = self.N
         index = N-1
         for i in range(N):
             self.b[index] = -gamma2[i]
@@ -195,7 +197,7 @@ class Room(object):
             index += N
 
 
-    def update_A_and_b_room3(self, gamma2):
+    def update_b_room3(self, gamma2):
         pass
 
 
