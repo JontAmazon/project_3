@@ -38,7 +38,37 @@ class Room(object):
     This is done in the solve() function.
 """
     def init_A_and_b_room1(self):
-        self.A = 'hej'
+        N = int(round(1/self.dx)) - 1   #Number of columns and rows of nodes
+        
+        A = np.zeros(N)
+        size = N*N
+        
+        #Fill the diagonal and second super/subdiagonals of A
+        diagonals = np.zeros(size)
+        diagonals[0] = -4
+        diagonals[N] = 1
+        A = sl.toeplitz(diagonals, diagonals)
+        
+        #Change the diagonal elements of all right boundary elements to -3 and fill the 
+        #subdiagonal entry with 1 (corresponding to the node on the left hand side 
+        #of the right boundary element element).
+        for i in range(1, N+1):
+            A[i*N - 1, i*N - 1] = -3
+            A[i*N - 1, i*N - 2] = 1
+    
+    #Change the subdiagonal entries for all left boundary values to 1
+    #(corresponding to the node on the right hand side of the left boundary element)
+    for i in range(0, N):
+        A[i*N, i*N + 1] = 1
+    
+    #Check if our grid contains elements inbetween the corner elements and
+    #in that case fill the super and subdiagonal elements on the same row with 
+    #1, corresponding to the left and right nodes with respect to these elements
+    if N > 2:
+        for i in range(0, N):
+            for j in range(i*N + 1, i*N + N - 1):
+                A[j, j - 1] = 1
+                A[j, j + 1] = 1
 
         
     def init_A_and_b_room2(self):
