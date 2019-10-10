@@ -79,21 +79,26 @@ class Room(object):
         """
         
         #Initiate the b-vector
-        b = np.zeros([N, 1])
+        b = np.zeros([size, 1])
         
         #Subtract the top boundary nodes with self.wall_temp
         for i in range(0, N):
             b[i] = b[i] - self.wall_temp
         
         #Subtract the bottom boundary nodes with self.wall_temp
-        for i in range(0, N):
+        for i in range(size, size-N):
             b[i] = b[i] - self.wall_temp
         
         #Subtract the most-right (near the right boundary) nodes with the 
         #corresponding value given for the node by Neumann-conditions
         for i in range(1, N+1):
-            b[i*N - 1] = b[i*N - 1] - 1 #TODO: ADD THE NEUMANN VALUES
+            b[i*N - 1] = b[i*N - 1] - self.gamma1[i-1]
             
+        #Subtract the most-left (near the left boundary elements) with self.heater_temp
+        for i in range(0, N):
+            b[i*N] = b[i*N] - self.heater_temp
+        
+        return A, b
         
         
         
