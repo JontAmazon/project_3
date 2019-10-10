@@ -65,19 +65,10 @@ class Room(object):
                 for j in range(i*N + 1, i*N + N - 1):
                     A[j, j - 1] = 1
                     A[j, j + 1] = 1
-<<<<<<< HEAD
-                
+
+
         """ Create b """
         b = np.zeros(N)
-=======
-        
-        """
-            Create b:
-        """
-        
-        #Initiate the b-vector
-        b = np.zeros([size, 1])
->>>>>>> 29f3acfd8752f8b8e462626d777320d78f493af6
         
         #Subtract the top boundary nodes with self.wall_temp
         for i in range(0, N):
@@ -96,8 +87,8 @@ class Room(object):
         for i in range(0, N):
             b[i*N] = b[i*N] - self.heater_temp
         
-        return A, b
-        
+        self.A = A
+        self.b = b
         
     def create_A_and_b_room2(self):
         """ Creates the A- and b-matrix for room 2, the A-matrix being
@@ -116,7 +107,7 @@ class Room(object):
         first_row[0] = -4
         first_row[1] = 1
         first_row[N] = 1
-        self.A = sl.toeplitz(first_row, first_row)
+        A = sl.toeplitz(first_row, first_row)
         
         # The two inner super- and subdiagonals of this toeplitz matrix need to
         # be modified. Specifically, every N:th element should be set to zero,
@@ -126,13 +117,13 @@ class Room(object):
         # SUB: first zero goes in row N.
         row = N
         for i in range(M-1):
-            self.A[row, row-1] = 0
+            A[row, row-1] = 0
             row += N
         
         #SUPER: first zero goes in row N-1.
         row = N-1
         for i in range(M-1):
-            self.A[row, row+1] = 0
+            A[row, row+1] = 0
             row += N
         
         
@@ -141,20 +132,20 @@ class Room(object):
         # iteration, while 4 are constant. Here we initialize b,considering only the 
         # 4 constant boundary conditions, while the other 2 are considered in 
         # update_b_room2(), called in every iteration in solve().
-        self.b = np.zeros(size)
+        b = np.zeros(size)
         
         # Upper bounndary:
-        self.b[:N] = -self.heater_temp
+        b[:N] = -self.heater_temp
         
         # Lower boundary:
-        self.b[-N:] = -self.window_temp
+        b[-N:] = -self.window_temp
         
         # Upper left boundary:
         # Every N nodes are effected by the upper left boundary, and in total 
         # N+1 nodes are effected. The first effected node is the 0:th node.
         index = 0
         for i in range(N+1):
-            self.b[index] = -self.wall_temp
+            b[index] -= self.wall_temp
             index += N
         
         # Lower right boundary:
@@ -162,16 +153,22 @@ class Room(object):
         # N+1 nodes are effected. The first effected node is the (N^2+(N-1)):th node.
         index = N**2 + (N-1)
         for i in range(N+1):
-            self.b[index] = -self.wall_temp
+            b[index] -= self.wall_temp
             index += N
-        
+
+        self.A = A
+        self.b = b        
 
     def create_A_and_b_room3(self):
         self.A = 'hej'
     
-    """ The b-matrix depends on the vectors gamma1 and gamma2 and is updated
-        in every iteration, within the solve-function.
-    """
+    
+    
+    
+    
+    """ [Updating b]
+        The b-matrix depends on the vectors gamma1 and gamma2 and is updated
+        in every iteration, within the solve-function. """
     def update_b_room1(self, gamma1):
         pass
 
@@ -185,7 +182,7 @@ class Room(object):
         N = self.N
         index = N-1
         for i in range(N):
-            self.b[index] = -gamma2[i]
+            self.b[index] -= gamma2[i]
             index += N
 
         # Lower left boundary:
@@ -193,7 +190,7 @@ class Room(object):
         # N nodes are effected. The first effected node is the (N^2+N):th node.
         index = N**2 + N
         for i in range(N):
-            self.b[index] = -gamma1[i]
+            self.b[index] -= gamma1[i]
             index += N
 
 
