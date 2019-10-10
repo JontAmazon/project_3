@@ -42,25 +42,28 @@ if __name__=='__main__':
         print(args.omega)
     if args.iters:
         kwargs['iters'] = args.iters
+    if args.wall_temp:
+        kwargs['wall_temp'] = args.wall_temp
 
-    comm = MPI.COMM_WORLD
-    room = comm.Get_rank() + 1
-    nproc = comm.Get_size()
-    room_object = room.Room(**kwargs,room=room)
+    com = MPI.COMM_WORLD
+    room = com.Get_rank() + 1
+    nproc = com.Get_size()
+
+    room_object = room.Room(**kwargs,room=room,com=com)
     U = room_object.solve()     
     if room==1:
-        U_2 = comm.recv(source=2)
-        U_3 = comm.recv(source=3)           
+        U_2 = com.recv(source=2)
+        U_3 = com.recv(source=3)           
     else:
-        comm.send(U,dest=1)
+        com.send(U,dest=1)
 
 
     if room == 0:
         print('my rank is ' + str(room) +'\n')
-        comm.send('blebleble',dest=1,tag=11)
+        com.send('blebleble',dest=1,tag=11)
     elif room == 1:
         
-        data = comm.recv(source=0,tag=11)
+        data = com.recv(source=0,tag=11)
         print('my rank is ' + str(room) +'and i just received the string ' + str(data) + '\n')
 
 

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import scipy.linalg as sl
 
 
 class Room(object):
     
-    def __init__(self, room, dx=1/3, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5):
+    def __init__(self, com,room, dx=1/3, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5):
         ''' Initalizes the room object for the corresponding room number
         
         '''
+        self.com = com
         self.room = room
         self.wall_temp = wall_temp 
         self.heater_temp = heater_temp 
@@ -60,8 +62,24 @@ class Room(object):
     generates room 1 aka omega_1
 """
     def solve(self):
+        if room == 1:
+            gamma_1 = np.ones(1/dx - 1)*(40+15+15+15)/4
+            self.com.send(gamma_1,dest=2)
+            for i in range(self.iters):
+                gamma_1 = self.com.recv(source=2)
+        if room == 2:
+            gamma_1 = self.com.recv(source=1)
+            gamma_2 = self.com.recv(source=3)
+            U = sl.solve(self.A,self.b)
+            if (1/dx-1) % 2 == 0:
+                gamma_1 = U[int(1/dx -1)**2]
+            gamma_1 = 
 
- 
+        if room == 3:
+            gamma_2 = np.ones(1/dx - 1)*(40+15+15+15)/4
+            self.com.send(gamma_2,dest=2)
+            for i in range(self.iters):
+                gamma_2 = self.com.redoescv(source=2)
  '''       
                       cool wall
                  ____________________
