@@ -30,6 +30,14 @@ if __name__=='__main__':
                         dest='wall_temp',
                         type = float,
                         help='Temperature of normal wall')
+    optional_group.add_argument('--heater_temp', '-h',
+                        dest='heater_temp',
+                        type = float,
+                        help='Temperature of heater')
+    optional_group.add_argument('--win_temp', '-f',
+                        dest='win_temp',
+                        type = float,
+                        help='Temperature of window')
     args = argparser.parse_args()
 
     kwargs = dict()
@@ -39,11 +47,15 @@ if __name__=='__main__':
         kwargs['dx'] = args.dx
     if args.omega:
         kwargs['omega'] = args.omega
-        print(args.omega)
     if args.iters:
         kwargs['iters'] = args.iters
     if args.wall_temp:
         kwargs['wall_temp'] = args.wall_temp
+    if args.heater_temp:
+        kwargs['heater_temp'] = args.heater_temp
+    if args.win_temp:
+        kwargs['win_temp'] = args.win_temp
+
 
     com = MPI.COMM_WORLD
     room = com.Get_rank() + 1
@@ -52,19 +64,12 @@ if __name__=='__main__':
     room_object = room.Room(**kwargs,room=room,com=com)
     U = room_object.solve()     
     if room==1:
-        U_2 = com.recv(source=2)
-        U_3 = com.recv(source=3)           
+        U2 = com.recv(source=2)
+        U3 = com.recv(source=3)
+        room_object.plot_apartment(U1=U,U2=U2,U3=U3)       
     else:
         com.send(U,dest=1)
 
-
-    if room == 0:
-        print('my rank is ' + str(room) +'\n')
-        com.send('blebleble',dest=1,tag=11)
-    elif room == 1:
-        
-        data = com.recv(source=0,tag=11)
-        print('my rank is ' + str(room) +'and i just received the string ' + str(data) + '\n')
 
 
 

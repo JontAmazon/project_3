@@ -24,19 +24,19 @@ class Room(object):
 
         #Initializes A and b for room 1, 2 or 3:
         if room == 1:
-            self.init_room1()
+            self.init_A_and_b_room1()
         elif room == 2:
-            self.init_room2()
+            self.init_A_and_b_room2()
         else:
-            self.init_room3()
+            self.init_A_and_b_room3()
 
-"""
-    Since A and b are partly constant throughout the
-    solving of the problem, we calculate the bulk of these matrices right away,
-    in their respective room_omega_n() functions.
-    A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
-    This is done in the solve() function.
-"""
+    """
+        Since A and b are partly constant throughout the
+        solving of the problem, we calculate the bulk of these matrices right away,
+        in their respective room_omega_n() functions.
+        A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
+        This is done in the solve() function.
+    """
     def init_A_and_b_room1(self):
         N = int(round(1/self.dx)) - 1   #Number of columns and rows of nodes
         
@@ -74,13 +74,12 @@ class Room(object):
     def init_A_and_b_room2(self):
         """ Initializes the matrices A and b for room 2. 
             For room 2, b will change in every iteration, while A is CONSTANT """
-        height = 2                          #heigth of the room
-        width = 1                           #width om the room
+        height = 2                          #heigth of room 2
+        width = 1                           #width  of room 2
         M = int(round(height/self.dx)) - 1  #number of rows of nodes
         N = int(round(width/self.dx)) - 1   #number of cols of nodes
+        self.N = N  #used later
         size = M*N
-        
-        self.M, self.N, self.size = M, N, size
         
         # [Building A].
         # The bulk of A is very close to a toeplitz matrix with 5 diagonals.
@@ -115,53 +114,98 @@ class Room(object):
         # other 2 are uppdated in every iteration in solve().
         self.b = np.zeros(size)
         
+        # Upper bounndary:
+        self.b[:N] = -self.heater_temp
         
+        # Lower boundary:
+        self.b[-N:] = -self.window_temp
+        
+        # Upper left boundary:
+        # Every N nodes are effected by the upper left boundary, and in total 
+        # N nodes are effected. The first effected node is the 0:th node.
+        index = 0
+        for i in range(N):
+            self.b[index] = -self.wall_temp
+            index += N
+        
+        # Lower right boundary:
+        # Every N nodes are effected by the upper left boundary, and in total 
+        # N nodes are effected. The first effected node is the (N^2+(N-1)+N):th node.
+        index = N**2 + (N-1) + N
+        for i in range(N):
+            self.b[index] = -self.wall_temp
+            index += N
         
 
     def init_A_and_b_room3(self):
         self.A = 'hej'
-
-
-
-
+    
     def update_A_and_b_room1(self, gamma1):
         pass
 
     def update_A_and_b_room2(self, gamma1, gamma2):
-        pass
+        """ Updates the b-matrix for room 2, according to values in gamma1 and
+            gamma2. Note that for room 2, the A-matrix is constant.
+        """
+        N = self.N
+        
+        # Upper right boundary:
+        # Every N nodes are effected by the upper right boundary, and in total 
+        # N nodes are effected. The first effected node is the (N-1):th node.
+        index = N-1
+        for i in range(N):
+            self.b[index] = -gamma2[i]
+            index += N
+        # Finally, where the upper and lower boundaries come together, take an average:
+        self.b[N**2 + (N-1)] = 1/2 * (-self.wall_temp - gamma2[-1])
+
+        # Lower left boundary:
+        # Every N nodes are effected by the lower left boundary, and in total 
+        # N nodes are effected. The first effected node is the (N^2+N):th node.
+        index = N**2 + N
+        for i in range(N):
+            self.b[index] = -gamma1[i]
+            index += N
+        # Finally, where the upper and lower boundaries come together, take an average:
+        self.b[N**2] = 1/2 * (-self.wall_temp - gamma1[0])
+
 
     def update_A_and_b_room3(self, gamma2):
         pass
 
 
-"""        
-    In solve(), note that the vectors gamma1 and gamma2 store different things at
-    different times. When a room2-object returns gamma1 and gamma2, they contain
-    the derivatives of the temperature at these two boundaries. When room1-
-    and room3-objects return these vectors, they store temperature values.
-    generates room 1 aka omega_1
-"""
+    """        
+        In solve(), note that the vectors gamma1 and gamma2 store different things at
+        different times. When a room2-object returns gamma1 and gamma2, they contain
+        the derivatives of the temperature at these two boundaries. When room1-
+        and room3-objects return these vectors, they store temperature values.
+        generates room 1 aka omega_1
+    """
     def solve(self):
+        room = self.room
+        dx = self.dx
+        com = self.com
         if room == 1:
-            gamma_1 = np.ones(1/dx - 1)*(40+15+15+15)/4
-            self.com.send(gamma_1,dest=2)
+            gamma1 = np.ones(1/dx - 1)*(40+15+15+15)/4
+            self.com.send(gamma1,dest=2)
             for i in range(self.iters):
-                gamma_1 = self.com.recv(source=2)
-
+                gamma1 = self.com.recv(source=2)
+                
+                self.update_A_and_b_room1(gamma1=gamma1)
                 u = sl.solve(self.A,self.b)
 
-                gamma_1_temp = u[int(1/dx-2)::int(1/dx-1)]
-                gamma_1 = gamma_1_temp - gamma_1
-                com.send(gamma_1,dest=2)
+                gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
+                gamma1 = gamma1_temp - gamma1
+                com.send(gamma1,dest=2)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
             self.u = u
         if room == 2:
             for i in range(self.iters):
-                gamma_1 = self.com.recv(source=1)
-                gamma_2 = self.com.recv(source=3)
+                gamma1 = self.com.recv(source=1)
+                gamma2 = self.com.recv(source=3)
 
-
+                self.update_A_and_b_room2(gamma1=gamma1,gamma2=gamma2)
                 U = sl.solve(self.A,self.b)
 
 
@@ -171,41 +215,41 @@ class Room(object):
                 # y-value as room 1's 'northern' wall & room 2's southern wall
                 #  since these don't contribute to gamma
                 if (1/dx-1) % 2 == 0:
-                    gamma_1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
-                    gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                    gamma_2_temp = gamma_2_temp[:-int(1/dx-2)]
+                    gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
+                    gamma2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                    gamma2_temp = gamma2_temp[:-int(1/dx-2)]
                 else: 
-                    gamma_1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
-                    gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                    gamma_2_temp = gamma_2_temp[:-int(1/dx-1)]
+                    gamma1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
+                    gamma2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                    gamma2_temp = gamma2_temp[:-int(1/dx-1)]
 
-                gamma_1 = gamma_1 - gamma_1_temp
-                gamma_2 = gamma_2 - gamma_2_temp
-                com.send(gamma_1,dest=1)
-                com.send(gamma_2,dest=3)
+                gamma1 = gamma1 - gamma1_temp
+                gamma2 = gamma2 - gamma2_temp
+                com.send(gamma1,dest=1)
+                com.send(gamma2,dest=3)
                 U = self.omega*U + (1-self.omega)*self.u_km1
                 self.u_km1 = U
             self.u = U
 
         if room == 3:
-            gamma_2 = np.ones(1/dx - 1)*(40+15+15+15)/4
-            self.com.send(gamma_2,dest=2)
+            gamma2 = np.ones(1/dx - 1)*(40+15+15+15)/4
+            self.com.send(gamma2,dest=2)
             for i in range(self.iters):
-                gamma_2 = self.com.recv(source=2)
+                gamma2 = self.com.recv(source=2)
 
-
+                self.update_A_and_b_room3(gamma2=gamma2)
                 u = sl.solve(self.A,self.b)
                 
                 
-                gamma_2_temp = u[0::int(1/dx-1)]
-                gamma_2 =  gamma_2_temp - gamma_2
-                com.send(gamma_2,dest=2)
+                gamma2_temp = u[0::int(1/dx-1)]
+                gamma2 =  gamma2_temp - gamma2
+                com.send(gamma2,dest=2)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
             self.u = u
 
-
- '''       
+"""
+    '''       
                       cool wall
                  ____________________
                 |                    >
@@ -221,7 +265,7 @@ class Room(object):
         '''
 
 
-''' generates room 2 aka omega_2
+    ''' generates room 2 aka omega_2
         
                       hot wall
                  ____________________
@@ -229,7 +273,7 @@ class Room(object):
                 |                    >
                 |                    >
                 |                    >
-      cool wall |                    > gamma 2
+       cool wall |                    > gamma 2
                 |                    >
                 |       u[i-N]       >
                 |          |         >
@@ -254,10 +298,11 @@ class Room(object):
                 <                    |
                 <       u[i-N]       |
                 <          |         |  
-       gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
+        gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
                 <          |         |
                 <       u[i+N]       |
                 <                    |
                 <____________________|
                          window
         '''
+"""
