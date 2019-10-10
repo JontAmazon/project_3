@@ -14,8 +14,8 @@ import room
 if __name__=='__main__':
     argparser = argparse.ArgumentParser(description='Solve a heat distribution problem for an apartment')
     optional_group = argparser.add_argument_group('Optional')
-    optional_group.add_argument('--d_x', '-d',
-                        dest='d_x',
+    optional_group.add_argument('--dx', '-d',
+                        dest='dx',
                         type=float,
                         help='Distance between grid points')
     optional_group.add_argument('--omega', '-o',
@@ -35,8 +35,8 @@ if __name__=='__main__':
     kwargs = dict()
 
     
-    if args.delta:
-        kwargs['delta'] = args.delta
+    if args.dx:
+        kwargs['dx'] = args.dx
     if args.omega:
         kwargs['omega'] = args.omega
         print(args.omega)
