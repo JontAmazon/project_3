@@ -68,6 +68,12 @@ class Room(object):
             for i in range(self.iters):
                 gamma_1 = self.com.recv(source=2)
 
+                u = sl.solve(self.A,self.b)
+
+                gamma_1_temp = u[int(1/dx-2)::int(1/dx-1)]
+                gamma_1 = gamma_1_temp - gamma_1
+                com.send(gamma_1,dest=2)
+
         if room == 2:
             gamma_1 = self.com.recv(source=1)
             gamma_2 = self.com.recv(source=3)
@@ -100,7 +106,15 @@ class Room(object):
             gamma_2 = np.ones(1/dx - 1)*(40+15+15+15)/4
             self.com.send(gamma_2,dest=2)
             for i in range(self.iters):
-                gamma_2 = self.com.redoescv(source=2)
+                gamma_2 = self.com.recv(source=2)
+
+
+                u = sl.solve(self.A,self.b)
+                
+                
+                gamma_2_temp = u[0::int(1/dx-1)]
+                gamma_2 =  gamma_2_temp - gamma_2
+                com.send(gamma_2,dest=2)
 
 
  '''       
