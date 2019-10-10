@@ -42,13 +42,12 @@ class Room(object):
     def init_A_and_b_room2(self):
         """ Initializes the matrices A and b for room 2. 
             For room 2, b will change in every iteration, while A is CONSTANT """
-        height = 2                          #heigth of the room
-        width = 1                           #width om the room
+        height = 2                          #heigth of room 2
+        width = 1                           #width  of room 2
         M = int(round(height/self.dx)) - 1  #number of rows of nodes
         N = int(round(width/self.dx)) - 1   #number of cols of nodes
+        self.N = N  #used later
         size = M*N
-        
-        self.M, self.N, self.size = M, N, size
         
         # [Building A].
         # The bulk of A is very close to a toeplitz matrix with 5 diagonals.
@@ -83,20 +82,61 @@ class Room(object):
         # other 2 are uppdated in every iteration in solve().
         self.b = np.zeros(size)
         
+        # Upper bounndary:
+        self.b[:N] = -self.heater_temp
         
+        # Lower boundary:
+        self.b[-N:] = -self.window_temp
+        
+        # Upper left boundary:
+        # Every N nodes are effected by the upper left boundary, and in total 
+        # N nodes are effected. The first effected node is the 0:th node.
+        index = 0
+        for i in range(N):
+            self.b[index] = -self.wall_temp
+            index += N
+        
+        # Lower right boundary:
+        # Every N nodes are effected by the upper left boundary, and in total 
+        # N nodes are effected. The first effected node is the (N^2+(N-1)+N):th node.
+        index = N**2 + (N-1) + N
+        for i in range(N):
+            self.b[index] = -self.wall_temp
+            index += N
         
 
     def init_A_and_b_room3(self):
         self.A = 'hej'
-
-
-
-
+    
     def update_A_and_b_room1(self, gamma1):
         pass
 
     def update_A_and_b_room2(self, gamma1, gamma2):
-        pass
+        """ Updates the b-matrix for room 2, according to values in gamma1 and
+            gamma2. Note that for room 2, the A-matrix is constant.
+        """
+        N = self.N
+        
+        # Upper right boundary:
+        # Every N nodes are effected by the upper right boundary, and in total 
+        # N nodes are effected. The first effected node is the (N-1):th node.
+        index = N-1
+        for i in range(N):
+            self.b[index] = -gamma2[i]
+            index += N
+        # Finally, where the upper and lower boundaries come together, take an average:
+        self.b[N**2 + (N-1)] = 1/2 * (-self.wall_temp - gamma2[-1])
+
+        # Lower left boundary:
+        # Every N nodes are effected by the lower left boundary, and in total 
+        # N nodes are effected. The first effected node is the (N^2+N):th node.
+        index = N**2 + N
+        for i in range(N):
+            self.b[index] = -gamma1[i]
+            index += N
+        # Finally, where the upper and lower boundaries come together, take an average:
+        self.b[N**2] = 1/2 * (-self.wall_temp - gamma1[0])
+
 
     def update_A_and_b_room3(self, gamma2):
         pass
