@@ -35,18 +35,20 @@ class Room(object):
     A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
     This is done in the solve() function.
 """
-    def init_room1(self):
+    def init_A_and_b_room1(self):
         self.A = 'hej'
 
         
-    def init_room2(self):
+    def init_A_and_b_room2(self):
         """ Initializes the matrices A and b for room 2. 
             For room 2, b will change in every iteration, while A is CONSTANT """
-        height = 2                     #heigth of the room
-        width = 1                      #width om the room
-        M = int(round(height/dx)) - 1  #number of rows of nodes
-        N = int(round(width/dx)) - 1   #number of cols of nodes
+        height = 2                          #heigth of the room
+        width = 1                           #width om the room
+        M = int(round(height/self.dx)) - 1  #number of rows of nodes
+        N = int(round(width/self.dx)) - 1   #number of cols of nodes
         size = M*N
+        
+        self.M, self.N, self.size = M, N, size
         
         # [Building A].
         # The bulk of A is very close to a toeplitz matrix with 5 diagonals.
@@ -75,14 +77,29 @@ class Room(object):
         
         
         # [Building b].
-        # Room 2 has 6 different (Dirichlet) boundary conditions. 2 of these
-        # change in every iteration, while 4 are constant. Here 
-        # here we focus on these 4...
+        # Room 2 has 6 different (Dirichlet) boundary conditions. Of these, 2
+        # change in every iteration, while 4 are constant. Here we initialize
+        # b, considering only the 4 constant boundary conditions, while the
+        # other 2 are uppdated in every iteration in solve().
+        self.b = np.zeros(size)
+        
+        
         
 
-    def init_room3(self):
+    def init_A_and_b_room3(self):
         self.A = 'hej'
 
+
+
+
+    def update_A_and_b_room1(self, gamma1):
+        pass
+
+    def update_A_and_b_room2(self, gamma1, gamma2):
+        pass
+
+    def update_A_and_b_room3(self, gamma2):
+        pass
 
 
 """        
