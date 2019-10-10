@@ -67,19 +67,42 @@ class Room(object):
             self.com.send(gamma_1,dest=2)
             for i in range(self.iters):
                 gamma_1 = self.com.recv(source=2)
+
         if room == 2:
             gamma_1 = self.com.recv(source=1)
             gamma_2 = self.com.recv(source=3)
+            
+            
             U = sl.solve(self.A,self.b)
+            
+
+            # Send gamma_1 and gamma_2 to their respective rooms. 
+            # If we have an even amount of internal points in the x
+            # dimension, we have to skip one row that lies on the same
+            # y-value as room 1's 'northern' wall & room 2's southern wall
+            #  since these don't contribute to gamma
             if (1/dx-1) % 2 == 0:
-                gamma_1 = U[int(1/dx -1)**2]
-            gamma_1 = 
+                gamma_1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
+                gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                gamma_2_temp = gamma_2_temp[:-int(1/dx-2)]
+            else: 
+                gamma_1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
+                gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                gamma_2_temp = gamma_2_temp[:-int(1/dx-1)]
+            
+            gamma_1 = gamma_1 - gamma_1_temp
+            gamma_2 = gamma_2 - gamma_2_temp
+            com.send(gamma_1,dest=1)
+            com.send(gamma_2,dest=3)
+
 
         if room == 3:
             gamma_2 = np.ones(1/dx - 1)*(40+15+15+15)/4
             self.com.send(gamma_2,dest=2)
             for i in range(self.iters):
                 gamma_2 = self.com.redoescv(source=2)
+
+
  '''       
                       cool wall
                  ____________________
