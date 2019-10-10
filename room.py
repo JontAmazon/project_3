@@ -14,8 +14,10 @@ class Room(object):
         self.wall_temp = wall_temp 
         self.heater_temp = heater_temp 
         self.window_temp = window_temp 
+        assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
         self.dx = dx
         self.omega = omega
+        assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
         self.iters = iters
         self.u = None
         self.u_km1 = None #used for relaxation.
