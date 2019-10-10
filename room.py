@@ -156,17 +156,17 @@ class Room(object):
         
         # Upper left boundary:
         # Every N nodes are effected by the upper left boundary, and in total 
-        # N nodes are effected. The first effected node is the 0:th node.
+        # N+1 nodes are effected. The first effected node is the 0:th node.
         index = 0
-        for i in range(N):
+        for i in range(N+1):
             self.b[index] = -self.wall_temp
             index += N
         
         # Lower right boundary:
         # Every N nodes are effected by the upper left boundary, and in total 
-        # N nodes are effected. The first effected node is the (N^2+(N-1)+N):th node.
-        index = N**2 + (N-1) + N
-        for i in range(N):
+        # N+1 nodes are effected. The first effected node is the (N^2+(N-1)):th node.
+        index = N**2 + (N-1)
+        for i in range(N+1):
             self.b[index] = -self.wall_temp
             index += N
         
@@ -190,8 +190,6 @@ class Room(object):
         for i in range(N):
             self.b[index] = -gamma2[i]
             index += N
-        # Finally, where the upper and lower boundaries come together, take an average:
-        self.b[N**2 + (N-1)] = 1/2 * (-self.wall_temp - gamma2[-1])
 
         # Lower left boundary:
         # Every N nodes are effected by the lower left boundary, and in total 
@@ -200,8 +198,6 @@ class Room(object):
         for i in range(N):
             self.b[index] = -gamma1[i]
             index += N
-        # Finally, where the upper and lower boundaries come together, take an average:
-        self.b[N**2] = 1/2 * (-self.wall_temp - gamma1[0])
 
 
     def update_A_and_b_room3(self, gamma2):
@@ -229,7 +225,7 @@ class Room(object):
                 u = sl.solve(self.A,self.b)
 
                 gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
-                gamma1 = gamma1_temp - gamma1
+                gamma1 = gamma1_temp + gamma1
                 com.send(gamma1,dest=2)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
@@ -242,23 +238,15 @@ class Room(object):
                 self.update_A_and_b_room2(gamma1=gamma1,gamma2=gamma2)
                 U = sl.solve(self.A,self.b)
 
-
-                # Send gamma_1 and gamma_2 to their respective rooms. 
-                # If we have an even amount of internal points in the x
-                # dimension, we have to skip one row that lies on the same
-                # y-value as room 1's 'northern' wall & room 2's southern wall
-                #  since these don't contribute to gamma
-                if (1/dx-1) % 2 == 0:
-                    gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
-                    gamma2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                    gamma2_temp = gamma2_temp[:-int(1/dx-2)]
-                else: 
-                    gamma1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
-                    gamma2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                    gamma2_temp = gamma2_temp[:-int(1/dx-1)]
-
-                gamma1 = gamma1 - gamma1_temp
-                gamma2 = gamma2 - gamma2_temp
+                gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
+                gamma2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                gamma2_temp = gamma2_temp[:-int(1/dx-2)]
+                
+                # We ignore the fineness of the mesh when computing
+                # the Neumann conditions, since we do the same for 
+                # our A matrices.
+                gamma1 = gamma1_temp - gamma1 
+                gamma2 = gamma2_temp - gamma2 
                 com.send(gamma1,dest=1)
                 com.send(gamma2,dest=3)
                 U = self.omega*U + (1-self.omega)*self.u_km1
@@ -276,7 +264,7 @@ class Room(object):
                 
                 
                 gamma2_temp = u[0::int(1/dx-1)]
-                gamma2 =  gamma2_temp - gamma2
+                gamma2 =  gamma2_temp + gamma2
                 com.send(gamma2,dest=2)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
