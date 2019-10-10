@@ -24,11 +24,11 @@ class Room(object):
 
         #Initializes A and b for room 1, 2 or 3:
         if room == 1:
-            self.init_room1()
+            self.init_A_and_b_room1()
         elif room == 2:
-            self.init_room2()
+            self.init_A_and_b_room2()
         else:
-            self.init_room3()
+            self.init_A_and_b_room3()
 
     """
         Since A and b are partly constant throughout the
