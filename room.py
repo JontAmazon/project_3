@@ -80,14 +80,6 @@ class Room(object):
         # here we focus on these 4...
         # todo continue here (Jonnte)
         
-        
-        
-        
-        
-                
-        
-        
-        
 
     def init_room3(self):
         self.A = 'hej'
@@ -95,7 +87,7 @@ class Room(object):
 
 
 """        
-    Note that the vectors gamma1 and gamma2 store different things at
+    In solve(), note that the vectors gamma1 and gamma2 store different things at
     different times. When a room2-object returns gamma1 and gamma2, they contain
     the derivatives of the temperature at these two boundaries. When room1-
     and room3-objects return these vectors, they store temperature values.
