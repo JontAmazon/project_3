@@ -68,7 +68,7 @@ class Room(object):
 
 
         """ Create b """
-        b = np.zeros(N)
+        b = np.zeros(size)
         
         #Subtract the top boundary nodes with self.wall_temp
         for i in range(0, N):
@@ -90,10 +90,12 @@ class Room(object):
         self.A = A
         self.b = b
         
+
+    
+    
     def create_A_and_b_room2(self):
-        """ Creates the A- and b-matrix for room 2, the A-matrix being
-            constant and the second one being mostly constant.
-        """
+        """ Initializes the matrices A and b for room 2. 
+            For room 2, b will change in every iteration, while A is CONSTANT """
         height = 2                          #heigth of room 2
         width = 1                           #width  of room 2
         M = int(round(height/self.dx)) - 1  #number of rows of nodes
