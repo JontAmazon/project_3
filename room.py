@@ -259,7 +259,7 @@ class Room(object):
                 
                 
                 gamma2_temp = u[0::int(1/dx-1)]
-                gamma2 =  gamma2_temp + gamma2
+                gamma2 =  gamma2_temp - gamma2
                 com.send(gamma2,dest=2)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
