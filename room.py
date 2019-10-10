@@ -6,11 +6,11 @@ import scipy.linalg as sl
 class Room(object):
     
     def __init__(self, com,room, dx=1/3, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5):
-        ''' Initalizes the room object for the corresponding room number
-        
+        ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
         self.room = room
+        assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
         self.wall_temp = wall_temp 
         self.heater_temp = heater_temp 
         self.window_temp = window_temp 
@@ -20,7 +20,6 @@ class Room(object):
         self.u = None
         self.u_km1 = None #used for relaxation.
 
-        assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
         #Initializes A and b for room 1, 2 or 3:
         if room == 1:
             self.init_room1()
@@ -41,7 +40,8 @@ class Room(object):
 
         
     def init_room2(self):
-        """ Builds and returns the matrices A and b for room 2. """
+        """ Initializes the matrices A and b for room 2. 
+            For room 2, b will change in every iteration, while A is CONSTANT """
         height = 2                     #heigth of the room
         width = 1                      #width om the room
         M = int(round(height/dx)) - 1  #number of rows of nodes
@@ -76,9 +76,8 @@ class Room(object):
         
         # [Building b].
         # Room 2 has 6 different (Dirichlet) boundary conditions. 2 of these
-        # change in every iteration, while 4 are constant.
+        # change in every iteration, while 4 are constant. Here 
         # here we focus on these 4...
-        # todo continue here (Jonnte)
         
 
     def init_room3(self):
