@@ -6,12 +6,7 @@ class Room(object):
     
     def __init__(self, room, dx=1/3, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5):
         ''' Initalizes the room object for the corresponding room number
-            
-    
-    
-
-
-
+        
         '''
         self.room = room
         self.wall_temp = wall_temp 
