@@ -43,6 +43,10 @@ class Room(object):
         A = np.zeros(N)
         size = N*N
         
+        """
+            Create A:
+        """
+        
         #Fill the diagonal and second super/subdiagonals of A
         diagonals = np.zeros(size)
         diagonals[0] = -4
@@ -69,6 +73,31 @@ class Room(object):
                 for j in range(i*N + 1, i*N + N - 1):
                     A[j, j - 1] = 1
                     A[j, j + 1] = 1
+        
+        """
+            Create b:
+        """
+        
+        #Initiate the b-vector
+        b = np.zeros([N, 1])
+        
+        #Subtract the top boundary nodes with self.wall_temp
+        for i in range(0, N):
+            b[i] = b[i] - self.wall_temp
+        
+        #Subtract the bottom boundary nodes with self.wall_temp
+        for i in range(0, N):
+            b[i] = b[i] - self.wall_temp
+        
+        #Subtract the most-right (near the right boundary) nodes with the 
+        #corresponding value given for the node by Neumann-conditions
+        for i in range(1, N+1):
+            b[i*N - 1] = b[i*N - 1] - 1 #TODO: ADD THE NEUMANN VALUES
+            
+        
+        
+        
+        
 
         
     def init_A_and_b_room2(self):
