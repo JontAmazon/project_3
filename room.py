@@ -30,13 +30,13 @@ class Room(object):
         else:
             self.init_room3()
 
-"""
-    Since A and b are partly constant throughout the
-    solving of the problem, we calculate the bulk of these matrices right away,
-    in their respective room_omega_n() functions.
-    A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
-    This is done in the solve() function.
-"""
+    """
+        Since A and b are partly constant throughout the
+        solving of the problem, we calculate the bulk of these matrices right away,
+        in their respective room_omega_n() functions.
+        A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
+        This is done in the solve() function.
+    """
     def init_A_and_b_room1(self):
         self.A = 'hej'
 
@@ -104,14 +104,17 @@ class Room(object):
         pass
 
 
-"""        
-    In solve(), note that the vectors gamma1 and gamma2 store different things at
-    different times. When a room2-object returns gamma1 and gamma2, they contain
-    the derivatives of the temperature at these two boundaries. When room1-
-    and room3-objects return these vectors, they store temperature values.
-    generates room 1 aka omega_1
-"""
+    """        
+        In solve(), note that the vectors gamma1 and gamma2 store different things at
+        different times. When a room2-object returns gamma1 and gamma2, they contain
+        the derivatives of the temperature at these two boundaries. When room1-
+        and room3-objects return these vectors, they store temperature values.
+        generates room 1 aka omega_1
+    """
     def solve(self):
+        room = self.room
+        dx = self.dx
+        com = self.com
         if room == 1:
             gamma_1 = np.ones(1/dx - 1)*(40+15+15+15)/4
             self.com.send(gamma_1,dest=2)
@@ -174,8 +177,8 @@ class Room(object):
                 self.u_km1=u
             self.u = u
 
-
- '''       
+"""
+    '''       
                       cool wall
                  ____________________
                 |                    >
@@ -191,7 +194,7 @@ class Room(object):
         '''
 
 
-''' generates room 2 aka omega_2
+    ''' generates room 2 aka omega_2
         
                       hot wall
                  ____________________
@@ -199,7 +202,7 @@ class Room(object):
                 |                    >
                 |                    >
                 |                    >
-      cool wall |                    > gamma 2
+       cool wall |                    > gamma 2
                 |                    >
                 |       u[i-N]       >
                 |          |         >
@@ -224,10 +227,11 @@ class Room(object):
                 <                    |
                 <       u[i-N]       |
                 <          |         |  
-       gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
+        gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
                 <          |         |
                 <       u[i+N]       |
                 <                    |
                 <____________________|
                          window
         '''
+"""

@@ -39,7 +39,6 @@ if __name__=='__main__':
         kwargs['dx'] = args.dx
     if args.omega:
         kwargs['omega'] = args.omega
-        print(args.omega)
     if args.iters:
         kwargs['iters'] = args.iters
     if args.wall_temp:
@@ -61,8 +60,7 @@ if __name__=='__main__':
     if room == 0:
         print('my rank is ' + str(room) +'\n')
         com.send('blebleble',dest=1,tag=11)
-    elif room == 1:
-        
+    elif room == 1: 
         data = com.recv(source=0,tag=11)
         print('my rank is ' + str(room) +'and i just received the string ' + str(data) + '\n')
 
