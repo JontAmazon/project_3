@@ -14,27 +14,29 @@ class Room(object):
         self.wall_temp = wall_temp 
         self.heater_temp = heater_temp 
         self.window_temp = window_temp 
+        assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
         self.dx = dx
         self.omega = omega
+        assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
         self.iters = iters
         self.u = None
         self.u_km1 = None #used for relaxation.
 
         #Initializes A and b for room 1, 2 or 3:
         if room == 1:
-            self.init_room1()
+            self.init_A_and_b_room1()
         elif room == 2:
-            self.init_room2()
+            self.init_A_and_b_room2()
         else:
-            self.init_room3()
+            self.init_A_and_b_room3()
 
-"""
-    Since A and b are partly constant throughout the
-    solving of the problem, we calculate the bulk of these matrices right away,
-    in their respective room_omega_n() functions.
-    A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
-    This is done in the solve() function.
-"""
+    """
+        Since A and b are partly constant throughout the
+        solving of the problem, we calculate the bulk of these matrices right away,
+        in their respective room_omega_n() functions.
+        A and b are then updated in every iteration, as the vectors gamma1 and gamma2 change.
+        This is done in the solve() function.
+    """
     def init_A_and_b_room1(self):
         self.A = 'hej'
 
@@ -142,56 +144,81 @@ class Room(object):
         pass
 
 
-"""        
-    In solve(), note that the vectors gamma1 and gamma2 store different things at
-    different times. When a room2-object returns gamma1 and gamma2, they contain
-    the derivatives of the temperature at these two boundaries. When room1-
-    and room3-objects return these vectors, they store temperature values.
-    generates room 1 aka omega_1
-"""
+    """        
+        In solve(), note that the vectors gamma1 and gamma2 store different things at
+        different times. When a room2-object returns gamma1 and gamma2, they contain
+        the derivatives of the temperature at these two boundaries. When room1-
+        and room3-objects return these vectors, they store temperature values.
+        generates room 1 aka omega_1
+    """
     def solve(self):
+        room = self.room
+        dx = self.dx
+        com = self.com
         if room == 1:
             gamma_1 = np.ones(1/dx - 1)*(40+15+15+15)/4
             self.com.send(gamma_1,dest=2)
             for i in range(self.iters):
                 gamma_1 = self.com.recv(source=2)
 
+                u = sl.solve(self.A,self.b)
+
+                gamma_1_temp = u[int(1/dx-2)::int(1/dx-1)]
+                gamma_1 = gamma_1_temp - gamma_1
+                com.send(gamma_1,dest=2)
+                u = self.omega*u + (1-self.omega)*self.u_km1
+                self.u_km1=u
+            self.u = u
         if room == 2:
-            gamma_1 = self.com.recv(source=1)
-            gamma_2 = self.com.recv(source=3)
-            
-            
-            U = sl.solve(self.A,self.b)
-            
+            for i in range(self.iters):
+                gamma_1 = self.com.recv(source=1)
+                gamma_2 = self.com.recv(source=3)
 
-            # Send gamma_1 and gamma_2 to their respective rooms. 
-            # If we have an even amount of internal points in the x
-            # dimension, we have to skip one row that lies on the same
-            # y-value as room 1's 'northern' wall & room 2's southern wall
-            #  since these don't contribute to gamma
-            if (1/dx-1) % 2 == 0:
-                gamma_1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
-                gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                gamma_2_temp = gamma_2_temp[:-int(1/dx-2)]
-            else: 
-                gamma_1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
-                gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                gamma_2_temp = gamma_2_temp[:-int(1/dx-1)]
-            
-            gamma_1 = gamma_1 - gamma_1_temp
-            gamma_2 = gamma_2 - gamma_2_temp
-            com.send(gamma_1,dest=1)
-            com.send(gamma_2,dest=3)
 
+                U = sl.solve(self.A,self.b)
+
+
+                # Send gamma_1 and gamma_2 to their respective rooms. 
+                # If we have an even amount of internal points in the x
+                # dimension, we have to skip one row that lies on the same
+                # y-value as room 1's 'northern' wall & room 2's southern wall
+                #  since these don't contribute to gamma
+                if (1/dx-1) % 2 == 0:
+                    gamma_1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
+                    gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                    gamma_2_temp = gamma_2_temp[:-int(1/dx-2)]
+                else: 
+                    gamma_1_temp = U[int(1/dx -1)**2::int(1/dx-1)]
+                    gamma_2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
+                    gamma_2_temp = gamma_2_temp[:-int(1/dx-1)]
+
+                gamma_1 = gamma_1 - gamma_1_temp
+                gamma_2 = gamma_2 - gamma_2_temp
+                com.send(gamma_1,dest=1)
+                com.send(gamma_2,dest=3)
+                U = self.omega*U + (1-self.omega)*self.u_km1
+                self.u_km1 = U
+            self.u = U
 
         if room == 3:
             gamma_2 = np.ones(1/dx - 1)*(40+15+15+15)/4
             self.com.send(gamma_2,dest=2)
             for i in range(self.iters):
-                gamma_2 = self.com.redoescv(source=2)
+                gamma_2 = self.com.recv(source=2)
 
 
- '''       
+                u = sl.solve(self.A,self.b)
+                
+                
+                gamma_2_temp = u[0::int(1/dx-1)]
+                gamma_2 =  gamma_2_temp - gamma_2
+                com.send(gamma_2,dest=2)
+                u = self.omega*u + (1-self.omega)*self.u_km1
+                self.u_km1=u
+            self.u = u
+
+"""
+    '''       
                       cool wall
                  ____________________
                 |                    >
@@ -207,7 +234,7 @@ class Room(object):
         '''
 
 
-''' generates room 2 aka omega_2
+    ''' generates room 2 aka omega_2
         
                       hot wall
                  ____________________
@@ -215,7 +242,7 @@ class Room(object):
                 |                    >
                 |                    >
                 |                    >
-      cool wall |                    > gamma 2
+       cool wall |                    > gamma 2
                 |                    >
                 |       u[i-N]       >
                 |          |         >
@@ -240,10 +267,11 @@ class Room(object):
                 <                    |
                 <       u[i-N]       |
                 <          |         |  
-       gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
+        gamma 2  < u[i-1]-u[i]-u[i+1] |  hot wall
                 <          |         |
                 <       u[i+N]       |
                 <                    |
                 <____________________|
                          window
         '''
+"""
