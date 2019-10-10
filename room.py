@@ -43,6 +43,10 @@ class Room(object):
         A = np.zeros(N)
         size = N*N
         
+        """
+            Create A:
+        """
+        
         #Fill the diagonal and second super/subdiagonals of A
         diagonals = np.zeros(size)
         diagonals[0] = -4
@@ -69,6 +73,31 @@ class Room(object):
                 for j in range(i*N + 1, i*N + N - 1):
                     A[j, j - 1] = 1
                     A[j, j + 1] = 1
+        
+        """
+            Create b:
+        """
+        
+        #Initiate the b-vector
+        b = np.zeros([N, 1])
+        
+        #Subtract the top boundary nodes with self.wall_temp
+        for i in range(0, N):
+            b[i] = b[i] - self.wall_temp
+        
+        #Subtract the bottom boundary nodes with self.wall_temp
+        for i in range(0, N):
+            b[i] = b[i] - self.wall_temp
+        
+        #Subtract the most-right (near the right boundary) nodes with the 
+        #corresponding value given for the node by Neumann-conditions
+        for i in range(1, N+1):
+            b[i*N - 1] = b[i*N - 1] - 1 #TODO: ADD THE NEUMANN VALUES
+            
+        
+        
+        
+        
 
         
     def init_A_and_b_room2(self):
@@ -122,17 +151,17 @@ class Room(object):
         
         # Upper left boundary:
         # Every N nodes are effected by the upper left boundary, and in total 
-        # N nodes are effected. The first effected node is the 0:th node.
+        # N+1 nodes are effected. The first effected node is the 0:th node.
         index = 0
-        for i in range(N):
+        for i in range(N+1):
             self.b[index] = -self.wall_temp
             index += N
         
         # Lower right boundary:
         # Every N nodes are effected by the upper left boundary, and in total 
-        # N nodes are effected. The first effected node is the (N^2+(N-1)+N):th node.
-        index = N**2 + (N-1) + N
-        for i in range(N):
+        # N+1 nodes are effected. The first effected node is the (N^2+(N-1)):th node.
+        index = N**2 + (N-1)
+        for i in range(N+1):
             self.b[index] = -self.wall_temp
             index += N
         
@@ -156,8 +185,6 @@ class Room(object):
         for i in range(N):
             self.b[index] = -gamma2[i]
             index += N
-        # Finally, where the upper and lower boundaries come together, take an average:
-        self.b[N**2 + (N-1)] = 1/2 * (-self.wall_temp - gamma2[-1])
 
         # Lower left boundary:
         # Every N nodes are effected by the lower left boundary, and in total 
@@ -166,8 +193,6 @@ class Room(object):
         for i in range(N):
             self.b[index] = -gamma1[i]
             index += N
-        # Finally, where the upper and lower boundaries come together, take an average:
-        self.b[N**2] = 1/2 * (-self.wall_temp - gamma1[0])
 
 
     def update_A_and_b_room3(self, gamma2):
