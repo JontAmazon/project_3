@@ -219,23 +219,24 @@ class Room(object):
         com = self.com
         if room == 1:
             gamma1 = np.ones(1/dx - 1)*(40+15+15+15)/4
-            self.com.send(gamma1,dest=2)
+            self.com.send(gamma1,dest=1)
             for i in range(self.iters):
-                gamma1 = self.com.recv(source=2)
+                gamma1 = self.com.recv(source=1)
                 
                 self.update_b_room1_room3(gamma=gamma1,b=self.b)
                 u = sl.solve(self.A,self.b)
 
                 gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
                 gamma1 = gamma1_temp + gamma1
-                com.send(gamma1,dest=2)
+                com.send(gamma1,dest=1)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
             self.u = u
+            return u, gamma2
         if room == 2:
             for i in range(self.iters):
-                gamma1 = self.com.recv(source=1)
-                gamma2 = self.com.recv(source=3)
+                gamma1 = self.com.recv(source=0)
+                gamma2 = self.com.recv(source=2)
 
                 self.update_b_room2(gamma1=gamma1,gamma2=gamma2)
                 U = sl.solve(self.A,self.b)
@@ -249,27 +250,30 @@ class Room(object):
                 # our A matrices.
                 gamma1 = gamma1_temp - gamma1 
                 gamma2 = gamma2_temp - gamma2 
-                com.send(gamma1,dest=1)
-                com.send(gamma2,dest=3)
+                com.send(gamma1,dest=0)
+                com.send(gamma2,dest=2)
                 U = self.omega*U + (1-self.omega)*self.u_km1
                 self.u_km1 = U
             self.u = U
+            return u, None
 
         if room == 3:
             gamma2 = np.ones(1/dx - 1)*(40+15+15+15)/4
-            self.com.send(gamma2,dest=2)
+            self.com.send(gamma2,dest=1)
             for i in range(self.iters):
-                gamma2 = self.com.recv(source=2)
+                gamma2 = self.com.recv(source=1)
 
                 self.update_b_room1_room3(gamma=gamma2,b=self.b)
                 u = sl.solve(self.A,self.b)
                 
                 gamma2_temp = u[int(1/dx-2)::int(1/dx-1)]
                 gamma2 = gamma2_temp - gamma1
-                com.send(gamma2,dest=2)
+                com.send(gamma2,dest=1)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
             self.u = u
+            return u, gamma2
+        
 
 """
     '''       

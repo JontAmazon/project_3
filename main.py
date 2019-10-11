@@ -62,11 +62,11 @@ if __name__=='__main__':
     nproc = com.Get_size()
 
     room_object = room.Room(**kwargs,room=room_nr,com=com)
-    U = room_object.solve()     
-    if room==1:
-        U2 = com.recv(source=2)
-        U3 = com.recv(source=3)
-        room_object.plot_apartment(U1=U,U2=U2,U3=U3)       
+    U, gamma = room_object.solve()     
+    if room==2:
+        U1 = com.recv(source=0)
+        U3 = com.recv(source=2)
+        room_object.plot_apartment(U1=U1,U2=U,U3=U3)       
     else:
         com.send(U,dest=1)
 
