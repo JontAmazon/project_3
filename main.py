@@ -26,15 +26,15 @@ if __name__=='__main__':
                         dest='iters',
                         type = int,
                         help='Number of iterations')
-    optional_group.add_argument('--wall_temp', '-w',
+    optional_group.add_argument('--wall_temp',
                         dest='wall_temp',
                         type = float,
                         help='Temperature of normal wall')
-    optional_group.add_argument('--heater_temp', '-h',
+    optional_group.add_argument('--heater_temp',
                         dest='heater_temp',
                         type = float,
                         help='Temperature of heater')
-    optional_group.add_argument('--win_temp', '-f',
+    optional_group.add_argument('--win_temp',
                         dest='win_temp',
                         type = float,
                         help='Temperature of window')
@@ -58,10 +58,10 @@ if __name__=='__main__':
 
 
     com = MPI.COMM_WORLD
-    room = com.Get_rank() + 1
+    room_nr = com.Get_rank() + 1
     nproc = com.Get_size()
 
-    room_object = room.Room(**kwargs,room=room,com=com)
+    room_object = room.Room(**kwargs,room=room_nr,com=com)
     U = room_object.solve()     
     if room==1:
         U2 = com.recv(source=2)
