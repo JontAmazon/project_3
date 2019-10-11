@@ -23,15 +23,14 @@ class Room(object):
         self.u_km1 = None #used for relaxation.
 
         #Create A (which is constant!) for room 1, 2 or 3.
-        if room == 1:
-            self.create_A_and_b_room1()
+        if room == 1 or room == 3:
+            self.create_A_and_b_room1_room3()
         if room == 2:
             self.create_A_and_b_room2()
-        if room == 3:
-            self.create_A_and_b_room3()
+       
 
 
-    def create_A_and_b_room1(self):
+    def create_A_and_b_room1_room3(self):
         """ Creates the A- and b-matrix for room 1, the A-matrix being
             constant and the second one being mostly constant.
         """
@@ -67,7 +66,9 @@ class Room(object):
                     A[j, j + 1] = 1
 
 
-        """ Create b """
+        """ Create b (without the values from the Neumann conditions given by
+            room 2)
+        """
         b = np.zeros(size)
         
         #Subtract the top boundary nodes with self.wall_temp
@@ -78,10 +79,6 @@ class Room(object):
         for i in range(size, size-N):
             b[i] = b[i] - self.wall_temp
         
-        #Subtract the most-right (near the right boundary) nodes with the 
-        #corresponding value given for the node by Neumann-conditions
-        for i in range(1, N+1):
-            b[i*N - 1] = b[i*N - 1] - self.gamma1[i-1]
             
         #Subtract the most-left (near the left boundary elements) with self.heater_temp
         for i in range(0, N):
@@ -89,6 +86,27 @@ class Room(object):
         
         self.A = A
         self.b = b
+    
+    
+    def update_b_room1_room3(self, gamma, b):
+        """ 
+        [Updating b]
+        Updates the matrix b by subtracting the right border elements with the
+        new Neumann-condition values in every iteration.
+        """
+        N = int(round(1/self.dx)) - 1 
+        
+        #Subtract the most-right (near the right boundary) nodes with the 
+        #corresponding value given for the node by Neumann-conditions
+        
+        for i in range(1, N+1):
+            b[i*N - 1] = b[i*N - 1] - gamma[i-1]
+            
+        #For the corner elements, subtract the self.wall_temp as well
+        b[0] -= self.wall_temp 
+        b[-1] -= self.wall_temp
+            
+        return b
         
 
     
@@ -161,18 +179,9 @@ class Room(object):
         self.A = A
         self.b = b        
 
-    def create_A_and_b_room3(self):
-        self.A = 'hej'
+       
     
     
-    
-    
-    
-    """ [Updating b]
-        The b-matrix depends on the vectors gamma1 and gamma2 and is updated
-        in every iteration, within the solve-function. """
-    def update_b_room1(self, gamma1):
-        pass
 
     def update_b_room2(self, gamma1, gamma2):
         """ Updates the b-matrix for room 2, according to values in gamma1 and
@@ -195,9 +204,6 @@ class Room(object):
             self.b[index] -= gamma1[i]
             index += N
 
-
-    def update_b_room3(self, gamma2):
-        pass
 
 
     """        
