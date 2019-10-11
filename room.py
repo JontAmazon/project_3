@@ -218,7 +218,7 @@ class Room(object):
         dx = self.dx
         com = self.com
         if room == 1:
-            gamma1 = np.ones(1/dx - 1)*(40+15+15+15)/4
+            gamma1 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
             self.com.send(gamma1,dest=1)
             for i in range(self.iters):
                 gamma1 = self.com.recv(source=1)
@@ -242,9 +242,8 @@ class Room(object):
                 U = sl.solve(self.A,self.b)
 
                 gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
-                gamma2_temp = U[int(1/dx-2)::int(1/dx-1)].copy()
-                gamma2_temp = gamma2_temp[:-int(1/dx-2)]
-                
+                gamma2_temp = U[int(1/dx-2)::int(1/dx-1)]
+                gamma2_temp = gamma2_temp[:int(1/dx-1)]
                 # We ignore the fineness of the mesh when computing
                 # the Neumann conditions, since we do the same for 
                 # our A matrices.
@@ -258,7 +257,7 @@ class Room(object):
             return u, None
 
         if room == 3:
-            gamma2 = np.ones(1/dx - 1)*(40+15+15+15)/4
+            gamma2 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
             self.com.send(gamma2,dest=1)
             for i in range(self.iters):
                 gamma2 = self.com.recv(source=1)
