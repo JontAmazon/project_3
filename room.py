@@ -223,7 +223,7 @@ class Room(object):
             for i in range(self.iters):
                 gamma1 = self.com.recv(source=2)
                 
-                self.update_A_and_b_room1(gamma1=gamma1)
+                self.update_b_room1_room3(gamma=gamma1,b=self.b)
                 u = sl.solve(self.A,self.b)
 
                 gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
@@ -237,7 +237,7 @@ class Room(object):
                 gamma1 = self.com.recv(source=1)
                 gamma2 = self.com.recv(source=3)
 
-                self.update_A_and_b_room2(gamma1=gamma1,gamma2=gamma2)
+                self.update_b_room2(gamma1=gamma1,gamma2=gamma2)
                 U = sl.solve(self.A,self.b)
 
                 gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
@@ -261,12 +261,11 @@ class Room(object):
             for i in range(self.iters):
                 gamma2 = self.com.recv(source=2)
 
-                self.update_A_and_b_room3(gamma2=gamma2)
+                self.update_b_room1_room3(gamma=gamma2,b=self.b)
                 u = sl.solve(self.A,self.b)
                 
-                
-                gamma2_temp = u[0::int(1/dx-1)]
-                gamma2 =  gamma2_temp - gamma2
+                gamma2_temp = u[int(1/dx-2)::int(1/dx-1)]
+                gamma2 = gamma2_temp - gamma1
                 com.send(gamma2,dest=2)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
