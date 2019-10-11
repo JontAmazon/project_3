@@ -82,7 +82,7 @@ class Room(object):
             b[i] = b[i] - self.wall_temp
         
         #Subtract the bottom boundary nodes with self.wall_temp
-        for i in range(size, size-N):
+        for i in range(size-N,size):
             b[i] = b[i] - self.wall_temp
         
             
@@ -106,10 +106,10 @@ class Room(object):
         #corresponding value given for the node by Neumann-conditions
         
         for i in range(1, N+1):
-            b[i*N - 1] = b[i*N - 1] - gamma[i-1]
+            b[i*N - 1] =  -gamma[i-1]
             
         #For the corner elements, subtract the self.wall_temp as well
-        b[0] -= self.wall_temp 
+        b[N-1] -= self.wall_temp 
         b[-1] -= self.wall_temp
             
         return b
@@ -232,6 +232,7 @@ class Room(object):
                 self.update_b_room1_room3(gamma=gamma1,b=self.b)
                 print('A in r1 ' +str(self.A))
                 print('b in r1 ' +str(self.b))
+                print('gamma1 in r1 ' + str(gamma1))
                 u = sl.solve(self.A,self.b)
                 print('u1 ' + str(u))
                 sys.stdout.flush()
