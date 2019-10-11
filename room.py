@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import scipy.linalg as sl
+import time
+import sys
 
 
 class Room(object):
@@ -20,7 +22,11 @@ class Room(object):
         assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
         self.iters = iters
         self.u = None
-        self.u_km1 = None #used for relaxation.
+        if room==2:
+            self.u_km1=np.ones(int((1/dx -1)*(2/dx-1)))*(4*wall_temp+heater_temp+window_temp)/6 #used for relaxation.
+        else:
+            self.u_km1=np.ones(int((1/dx-1)**2))*(3*wall_temp+heater_temp)/4 #used for relaxation.
+        
 
         #Create A (which is constant!) for room 1, 2 or 3.
         if room == 1 or room == 3:
@@ -216,31 +222,37 @@ class Room(object):
     def solve(self):
         room = self.room
         dx = self.dx
-        com = self.com
+        
         if room == 1:
+            
             gamma1 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
             self.com.send(gamma1,dest=1)
             for i in range(self.iters):
                 gamma1 = self.com.recv(source=1)
-                
                 self.update_b_room1_room3(gamma=gamma1,b=self.b)
+                print('A in r1 ' +str(self.A))
+                print('b in r1 ' +str(self.b))
                 u = sl.solve(self.A,self.b)
-
+                print('u1 ' + str(u))
+                sys.stdout.flush()
                 gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
                 gamma1 = gamma1_temp + gamma1
-                com.send(gamma1,dest=1)
+                self.com.send(gamma1,dest=1)
+                
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
-            self.u = u
             return u, gamma1
         if room == 2:
-            for i in range(self.iters):
+            for j in range(self.iters):
                 gamma1 = self.com.recv(source=0)
                 gamma2 = self.com.recv(source=2)
-
+                
                 self.update_b_room2(gamma1=gamma1,gamma2=gamma2)
+                
                 U = sl.solve(self.A,self.b)
-
+                time.sleep(1)
+                print('u2 ' + str(U))
+                sys.stdout.flush()
                 gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
                 gamma2_temp = U[int(1/dx-2)::int(1/dx-1)]
                 gamma2_temp = gamma2_temp[:int(1/dx-1)]
@@ -249,28 +261,27 @@ class Room(object):
                 # our A matrices.
                 gamma1 = gamma1_temp - gamma1 
                 gamma2 = gamma2_temp - gamma2 
-                com.send(gamma1,dest=0)
-                com.send(gamma2,dest=2)
+                self.com.send(gamma1,dest=0)
+                self.com.send(gamma2,dest=2)
                 U = self.omega*U + (1-self.omega)*self.u_km1
                 self.u_km1 = U
-            self.u = U
-            return u, None
+            return U, None
 
         if room == 3:
             gamma2 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
             self.com.send(gamma2,dest=1)
-            for i in range(self.iters):
+            for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
-
                 self.update_b_room1_room3(gamma=gamma2,b=self.b)
                 u = sl.solve(self.A,self.b)
-                
+
+                print('u3 ' + str(u))
+                sys.stdout.flush()
                 gamma2_temp = u[int(1/dx-2)::int(1/dx-1)]
-                gamma2 = gamma2_temp - gamma1
-                com.send(gamma2,dest=1)
+                gamma2 = gamma2_temp - gamma2
+                self.com.send(gamma2,dest=1)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
-            self.u = u
             return u, gamma2
         
 

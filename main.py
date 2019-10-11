@@ -16,7 +16,7 @@ if __name__=='__main__':
     optional_group = argparser.add_argument_group('Optional')
     optional_group.add_argument('--dx', '-d',
                         dest='dx',
-                        type=float,
+                        type=str,
                         help='Distance between grid points')
     optional_group.add_argument('--omega', '-o',
                         dest='omega',
@@ -44,7 +44,8 @@ if __name__=='__main__':
 
     
     if args.dx:
-        kwargs['dx'] = args.dx
+        frac = args.dx.split('/')
+        kwargs['dx'] = float(int(frac[0])/int(frac[1]))
     if args.omega:
         kwargs['omega'] = args.omega
     if args.iters:
@@ -63,12 +64,14 @@ if __name__=='__main__':
 
     room_object = room.Room(**kwargs,room=room_nr,com=com)
     U, gamma = room_object.solve()     
-    if room==2:
+    if room_nr==2:
+        #print(U)
         U1 = com.recv(source=0)
         U3 = com.recv(source=2)
-        room_object.plot_apartment(U1=U1,U2=U,U3=U3)       
+        #room_object.plot_apartment(U1=U1,U2=U,U3=U3)       
     else:
         com.send(U,dest=1)
+    #print(U)
 
 
 
