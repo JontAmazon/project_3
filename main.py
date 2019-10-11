@@ -64,13 +64,27 @@ if __name__=='__main__':
 
     room_object = room.Room(**kwargs,room=room_nr,com=com)
     U, gamma = room_object.solve()     
+    print('done with solve')
     if room_nr==2:
         #print(U)
-        U1 = com.recv(source=0)
-        U3 = com.recv(source=2)
-        #room_object.plot_apartment(U1=U1,U2=U,U3=U3)       
+        U1 = com.recv(source=0,tag=1)
+        com.send('ping',dest=0)
+        gamma1 = com.recv(source=0,tag=2)
+        
+        U3 = com.recv(source=2,tag=3)
+        com.send('ping',dest=2)
+        gamma2 = com.recv(source=2,tag=4)
+        print('gamma1' + str(gamma1))
+        print('u1 ' + str(U1))
+        print('u2 ' + str(U.astype(int)))
+        print('gamma2' + str(gamma2))
+        print('u3 ' + str(U3))
+        room_object.plot_apartment(U1=U1,U2=U,U3=U3,gamma1=gamma1,gamma2=gamma2)       
     else:
-        com.send(U,dest=1)
+        com.send(U,dest=1,tag=room_nr)
+        ping = com.recv(source=1)
+        print('ping ' + str(ping))
+        com.send(gamma,dest=1,tag=room_nr+1)
     #print(U)
 
 

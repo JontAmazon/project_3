@@ -230,12 +230,9 @@ class Room(object):
             for i in range(self.iters):
                 gamma1 = self.com.recv(source=1)
                 self.update_b_room1_room3(gamma=gamma1)
-                print('A in r1 ' +str(self.A))
-                print('b in r1 ' +str(self.b))
-                print('gamma1 in r1 ' + str(gamma1))
+
                 u = sl.solve(self.A,self.b)
-                print('u1 ' + str(u))
-                sys.stdout.flush()
+
                 gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
                 gamma1 = gamma1_temp + gamma1
                 self.com.send(gamma1,dest=1)
@@ -251,9 +248,7 @@ class Room(object):
                 self.update_b_room2(gamma1=gamma1,gamma2=gamma2)
                 
                 U = sl.solve(self.A,self.b)
-                time.sleep(1)
-                print('u2 ' + str(U))
-                sys.stdout.flush()
+
                 gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
                 gamma2_temp = U[int(1/dx-2)::int(1/dx-1)]
                 gamma2_temp = gamma2_temp[:int(1/dx-1)]
@@ -276,8 +271,6 @@ class Room(object):
                 self.update_b_room1_room3(gamma=gamma2)
                 u = sl.solve(self.A,self.b)
 
-                print('u3 ' + str(u))
-                sys.stdout.flush()
                 gamma2_temp = u[int(1/dx-2)::int(1/dx-1)]
                 gamma2 = gamma2_temp - gamma2
                 self.com.send(gamma2,dest=1)
@@ -285,11 +278,11 @@ class Room(object):
                 self.u_km1=u
             return u, gamma2
         
-    def plot_appartment(self,U1,U2,U3,gamma1,gamma2):
+    def plot_apartment(self,U1,U2,U3,gamma1,gamma2):
         fig, ax = plt.subplots()
         dx = self.dx
         N = self.N  #int(1/dx-1)
-        M = self.M  #int(2/dx-1)  
+        M = int(2/dx -1)  #int(2/dx-1)  
         #assemble_room_1
         # 3 boundaries, size (N+2)*(N+1)
         
@@ -315,7 +308,7 @@ class Room(object):
         # 3 boundaries, size (N+2)*(N+1)
 
         room3= np.zeros((N+2,N+1)) #np.ones((N+2,N+1))
-        room3[1:-1,:-1] = U3.reshape((N,N))
+        room3[1:-1,:-1] = np.flip(U3,axis=0).reshape((N,N))
         room3[:,-1] = self.wall_temp
         room3[0,:] = self.heater_temp
         room3[-1,:] = self.wall_temp
@@ -334,13 +327,14 @@ class Room(object):
         # make the plot
         #c = ax.pcolormesh(X, Y, Map, cmap='RdBu', vmin=0, vmax=Map.max(),)
         #y, x = np.mgrid[slice(0, 2 + dx, dx),slice(0, 3 + dx, dx)]
-        cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu')
+        cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu_r')
         
         #plt.imshow(Map)
         #plt.colorbar()
         ax.axis([X.min(), X.max(), Y.min(), Y.max()])
         fig.colorbar(cf, ax=ax)
         plt.axis('equal')
+        plt.title('Iterations = ' + str(self.iters) + '. Mesh width = ' + str(self.dx)+'m')
         plt.show()
 """
     '''       
