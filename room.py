@@ -232,7 +232,7 @@ class Room(object):
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
             self.u = u
-            return u, gamma2
+            return u, gamma1
         if room == 2:
             for i in range(self.iters):
                 gamma1 = self.com.recv(source=0)
