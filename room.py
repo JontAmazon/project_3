@@ -193,7 +193,7 @@ class Room(object):
         N = self.N
         index = N-1
         for i in range(N):
-            self.b[index] -= gamma2[i]
+            self.b[index] = -gamma2[i]
             index += N
 
         # Lower left boundary:
@@ -201,8 +201,14 @@ class Room(object):
         # N nodes are effected. The first effected node is the (N^2+N):th node.
         index = N**2 + N
         for i in range(N):
-            self.b[index] -= gamma1[i]
+            self.b[index] = -gamma1[i]
             index += N
+            
+        # Two corners:
+        # The above code has overwritten the b-values at two corners. There, the b-vector 
+        # should also have contributions from the outer wall, as well as from gamma:
+        self.b[N-1] -= self.heater_temp
+        self.b[N**2-N] -= self.window_temp
 
 
 
