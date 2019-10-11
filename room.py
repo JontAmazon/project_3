@@ -3,6 +3,8 @@ import numpy as np
 import scipy.linalg as sl
 import time
 import sys
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 
 class Room(object):
@@ -125,6 +127,7 @@ class Room(object):
         M = int(round(height/self.dx)) - 1  #number of rows of nodes
         N = int(round(width/self.dx)) - 1   #number of cols of nodes
         self.N = N  #used later
+        self.M = M
         size = M*N
                 
         """ Create A """
@@ -284,7 +287,63 @@ class Room(object):
                 self.u_km1=u
             return u, gamma2
         
+    def plot_appartment(self,U1,U2,U3,gamma1,gamma2):
+        fig, ax = plt.subplots()
+        dx = self.dx
+        N = self.N  #int(1/dx-1)
+        M = self.M  #int(2/dx-1)  
+        #assemble_room_1
+        # 3 boundaries, size (N+2)*(N+1)
+        
+        room1 = np.zeros((N+2,N+1)) # np.linspace(1,2,(N+2)*(N+1)).reshape(((N+2),(N+1)))
+        room1[1:-1,1:] = U1.reshape((N,N))
+        room1[:,0] = self.heater_temp
+        room1[0,:] = self.wall_temp
+        room1[-1,:] = self.wall_temp
+        
+        # assemble room_2
+        # six bounadies
+        
+        room2= np.zeros((M+2,N+2))
+        room2[1:-1,1:-1] = U2.reshape((M,N))
+        room2[0,:]= self.heater_temp # upper boundary
+        room2[1:N+1,-1] = gamma2 # gamma 2 boundary
+        room2[N+1:,-1] = self.wall_temp 
+        room2[-1,:] = self.window_temp
+        room2[N+2:-1,0] = gamma1 # gamma 1 bound
+        room2[:N+2,0] = self.wall_temp
+        
+        #assemble_room_3
+        # 3 boundaries, size (N+2)*(N+1)
 
+        room3= np.zeros((N+2,N+1)) #np.ones((N+2,N+1))
+        room3[1:-1,:-1] = U3.reshape((N,N))
+        room3[:,-1] = self.wall_temp
+        room3[0,:] = self.heater_temp
+        room3[-1,:] = self.wall_temp
+        
+        #Assemble heat map
+        
+        Map = np.zeros((M+2,N*3+4))
+        Map[-(N+2):,:N+1] = room1 #room 1
+        Map[:,N+1:N*2+3] = room2 # room 2
+        Map[0:N+2,N*2+3:] = room3 # room 3
+        #Map[-(N+2)+2:-2,N+1-2] = 10 # marker in room 1
+        #Map = np.vstack((Map,np.zeros((1,Map.shape[1]))))
+        #Map = np.hstack((Map,np.zeros((Map.shape[0],1))))
+        X, Y = np.meshgrid(np.linspace(-dx/2, 3+dx/2, (N*3+4)),np.linspace(2+dx/2, -dx/2, (M+2)))
+        levels = MaxNLocator(nbins=50).tick_values(Map.min(), Map.max())
+        # make the plot
+        #c = ax.pcolormesh(X, Y, Map, cmap='RdBu', vmin=0, vmax=Map.max(),)
+        #y, x = np.mgrid[slice(0, 2 + dx, dx),slice(0, 3 + dx, dx)]
+        cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu')
+        
+        #plt.imshow(Map)
+        #plt.colorbar()
+        ax.axis([X.min(), X.max(), Y.min(), Y.max()])
+        fig.colorbar(cf, ax=ax)
+        plt.axis('equal')
+        plt.show()
 """
     '''       
                       cool wall
