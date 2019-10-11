@@ -20,6 +20,7 @@ class Room(object):
         self.window_temp = window_temp 
         assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
         self.dx = dx
+        self.N = int(round(1/self.dx)) - 1 
         self.omega = omega
         assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
         self.iters = iters
@@ -42,8 +43,8 @@ class Room(object):
         """ Creates the A- and b-matrix for room 1, the A-matrix being
             constant and the second one being mostly constant.
         """
-        N = int(round(1/self.dx)) - 1   #Number of columns and rows of nodes
-        size = N*N
+        N = self.N    #Number of columns and rows of nodes
+        size = N*N    #Number of unknown nodes.
                 
         """ Create A """
         #Fill the diagonal and second super/subdiagonals of A
@@ -96,39 +97,32 @@ class Room(object):
         self.b = b
     
     
-    def update_b_room1_room3(self, gamma, b):
+    def update_b_room1_room3(self, gamma):
         """ 
         [Updating b]
         Updates the matrix b by subtracting the right border elements with the
         new Neumann-condition values in every iteration.
         """
-        N = int(round(1/self.dx)) - 1 
+        N = self.N
         
         #Subtract the most-right (near the right boundary) nodes with the 
         #corresponding value given for the node by Neumann-conditions
-        
         for i in range(1, N+1):
-            b[i*N - 1] =  -gamma[i-1]
+            self.b[i*N - 1] =  -gamma[i-1]
             
         #For the corner elements, subtract the self.wall_temp as well
-        b[N-1] -= self.wall_temp 
-        b[-1] -= self.wall_temp
+        self.b[N-1] -= self.wall_temp 
+        self.b[-1] -= self.wall_temp
             
-        return b
         
-
-    
     
     def create_A_and_b_room2(self):
         """ Initializes the matrices A and b for room 2. 
             For room 2, b will change in every iteration, while A is CONSTANT """
         height = 2                          #heigth of room 2
-        width = 1                           #width  of room 2
         M = int(round(height/self.dx)) - 1  #number of rows of nodes
-        N = int(round(width/self.dx)) - 1   #number of cols of nodes
-        self.N = N  #used later
-        self.M = M
-        size = M*N
+        N = self.N                          #number of cols of nodes
+        size = M*N                          #number of unknown nodes
                 
         """ Create A """
         # The bulk of A is very close to a toeplitz matrix with 5 diagonals.
@@ -188,9 +182,6 @@ class Room(object):
         self.A = A
         self.b = b        
 
-       
-    
-    
 
     def update_b_room2(self, gamma1, gamma2):
         """ Updates the b-matrix for room 2, according to values in gamma1 and
@@ -232,7 +223,7 @@ class Room(object):
             self.com.send(gamma1,dest=1)
             for i in range(self.iters):
                 gamma1 = self.com.recv(source=1)
-                self.update_b_room1_room3(gamma=gamma1,b=self.b)
+                self.update_b_room1_room3(gamma=gamma1)
                 print('A in r1 ' +str(self.A))
                 print('b in r1 ' +str(self.b))
                 print('gamma1 in r1 ' + str(gamma1))
@@ -276,7 +267,7 @@ class Room(object):
             self.com.send(gamma2,dest=1)
             for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
-                self.update_b_room1_room3(gamma=gamma2,b=self.b)
+                self.update_b_room1_room3(gamma=gamma2)
                 u = sl.solve(self.A,self.b)
 
                 print('u3 ' + str(u))
