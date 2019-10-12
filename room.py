@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5):
+    def __init__(self, com,room, dx=1/20, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
@@ -24,6 +24,7 @@ class Room(object):
         self.omega = omega
         assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
         self.iters = iters
+        self.debug = debug
         self.u = None
         if room==2:
             self.u_km1=np.ones(int((1/dx -1)*(2/dx-1)))*(4*wall_temp+heater_temp+window_temp)/6 #used for relaxation.
@@ -223,11 +224,19 @@ class Room(object):
         room = self.room
         dx = self.dx
         
+        
         if room == 1:
             
             gamma1 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
             self.com.send(gamma1,dest=1)
+            if self.debug:
+                time_1 = time.time()*1000
             for i in range(self.iters):
+                if self.debug:
+                    print('Time since last iteration = ' + str(time.time()*1000-time_1))
+                    print('Omega 1 iteration : ' + str(i)+'\n')
+                    time_1 = time.time()*1000
+                    sys.stdout.flush()
                 gamma1 = self.com.recv(source=1)
                 self.update_b_room1_room3(gamma=gamma1)
 
@@ -239,6 +248,7 @@ class Room(object):
                 
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
+                
             return u, gamma1
         if room == 2:
             for j in range(self.iters):
@@ -261,6 +271,9 @@ class Room(object):
                 self.com.send(gamma2,dest=2)
                 U = self.omega*U + (1-self.omega)*self.u_km1
                 self.u_km1 = U
+                if self.debug:
+                    print('Omega 2 iteration : ' + str(j)+'\n')
+                    sys.stdout.flush()
             return U, None
 
         if room == 3:
@@ -276,6 +289,9 @@ class Room(object):
                 self.com.send(gamma2,dest=1)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
+                if self.debug:
+                    print('Omega 3 iteration : ' + str(k)+'\n')
+                    sys.stdout.flush()
             return u, gamma2
         
     def plot_apartment(self,U1,U2,U3,gamma1,gamma2):
