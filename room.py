@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/3, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5):
+    def __init__(self, com,room, dx=1/20, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
@@ -206,9 +206,9 @@ class Room(object):
             
         # Two corners:
         # The above code has overwritten the b-values at two corners. There, the b-vector 
-        # should also have contributions from the outer wall, as well as from gamma:
-        self.b[N-1] -= self.heater_temp
-        self.b[N**2-N] -= self.window_temp
+        # should only have contributions from the outer wall:
+        self.b[N-1] = -self.heater_temp
+        self.b[N**2-N] = -self.wall_temp
 
 
 
@@ -298,9 +298,11 @@ class Room(object):
         room2= np.zeros((M+2,N+2))
         room2[1:-1,1:-1] = U2.reshape((M,N))
         room2[0,:]= self.heater_temp # upper boundary
+        room2[0,-1]=self.wall_temp # tiny piece of wall between room 2 and 3, should be wall temp not heater temp
         room2[1:N+1,-1] = gamma2 # gamma 2 boundary
         room2[N+1:,-1] = self.wall_temp 
         room2[-1,:] = self.window_temp
+        room2[-1,0]=self.wall_temp # tiny piece of wall between room 2 and 1, should be wall temp not window temp
         room2[N+2:-1,0] = gamma1 # gamma 1 bound
         room2[:N+2,0] = self.wall_temp
         
@@ -309,8 +311,8 @@ class Room(object):
 
         room3= np.zeros((N+2,N+1)) #np.ones((N+2,N+1))
         room3[1:-1,:-1] = np.flip(U3,axis=0).reshape((N,N))
-        room3[:,-1] = self.wall_temp
-        room3[0,:] = self.heater_temp
+        room3[:,-1] = self.heater_temp
+        room3[0,:] = self.wall_temp
         room3[-1,:] = self.wall_temp
         
         #Assemble heat map
