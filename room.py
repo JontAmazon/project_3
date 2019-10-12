@@ -233,7 +233,7 @@ class Room(object):
                 time_1 = time.time()*1000
             for i in range(self.iters):
                 if self.debug:
-                    print('Time since last iteration = ' + str(time.time()*1000-time_1))
+                    print('Time since last iteration = ' + str(time.time()*1000-time_1)+'ms')
                     print('Omega 1 iteration : ' + str(i)+'\n')
                     time_1 = time.time()*1000
                     sys.stdout.flush()
