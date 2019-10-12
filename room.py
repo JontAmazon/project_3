@@ -223,11 +223,12 @@ class Room(object):
     def solve(self):
         room = self.room
         dx = self.dx
+        N = self.N
         
         
         if room == 1:
             
-            gamma1 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
+            gamma1 = np.ones(N)*(40+15+15+15)/4
             self.com.send(gamma1,dest=1)
             if self.debug:
                 time_1 = time.time()*1000
@@ -242,7 +243,7 @@ class Room(object):
 
                 u = sl.solve(self.A,self.b)
 
-                gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
+                gamma1_temp = u[N-1::N]
                 gamma1 = gamma1_temp + gamma1
                 self.com.send(gamma1,dest=1)
                 
@@ -251,17 +252,18 @@ class Room(object):
                 
             return u, gamma1
         if room == 2:
+            """     N = int(round(1/self.dx)) - 1      """
             for j in range(self.iters):
                 gamma1 = self.com.recv(source=0)
                 gamma2 = self.com.recv(source=2)
                 
-                self.update_b_room2(gamma1=gamma1,gamma2=gamma2)
+                self.update_b_room2(gamma1=gamma1, gamma2=gamma2)
                 
                 U = sl.solve(self.A,self.b)
 
-                gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
-                gamma2_temp = U[int(1/dx-2)::int(1/dx-1)]
-                gamma2_temp = gamma2_temp[:int(1/dx-1)]
+                gamma1_temp = U[N**2+N::N]
+                gamma2_temp = U[N-1::N]
+                gamma2_temp = gamma2_temp[:N]
                 # We ignore the fineness of the mesh when computing
                 # the Neumann conditions, since we do the same for 
                 # our A matrices.
@@ -269,7 +271,7 @@ class Room(object):
                 gamma2 = gamma2_temp - gamma2 
                 self.com.send(gamma1,dest=0)
                 self.com.send(gamma2,dest=2)
-                U = self.omega*U + (1-self.omega)*self.u_km1
+                U = self.omega*U + (1-self.omega)*self.u_km1                    #TODO = flytta upp.
                 self.u_km1 = U
                 if self.debug:
                     print('Omega 2 iteration : ' + str(j)+'\n')
@@ -277,14 +279,14 @@ class Room(object):
             return U, None
 
         if room == 3:
-            gamma2 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
+            gamma2 = np.ones(N)*(40+15+15+15)/4
             self.com.send(gamma2,dest=1)
             for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
                 self.update_b_room1_room3(gamma=gamma2)
                 u = sl.solve(self.A,self.b)
 
-                gamma2_temp = u[int(1/dx-2)::int(1/dx-1)]
+                gamma2_temp = u[N-1::N]
                 gamma2 = gamma2_temp - gamma2
                 self.com.send(gamma2,dest=1)
                 u = self.omega*u + (1-self.omega)*self.u_km1
