@@ -226,8 +226,8 @@ class Room(object):
         
         
         if room == 1:
-            
             gamma1 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
+            gamma1_km1 = gamma1
             self.com.send(gamma1,dest=1)
             if self.debug:
                 time_1 = time.time()*1000
@@ -243,7 +243,8 @@ class Room(object):
                 u = sl.solve(self.A,self.b)
 
                 gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
-                gamma1 = gamma1_temp + gamma1
+                gamma1_km1 = gamma1
+                gamma1 = self.omega*(gamma1_temp + gamma1) + (1-self.omega)*gamma1_km1                                
                 self.com.send(gamma1,dest=1)
                 
                 u = self.omega*u + (1-self.omega)*self.u_km1
@@ -278,6 +279,7 @@ class Room(object):
 
         if room == 3:
             gamma2 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
+            gamma2_km1 = gamma2
             self.com.send(gamma2,dest=1)
             for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
@@ -285,7 +287,9 @@ class Room(object):
                 u = sl.solve(self.A,self.b)
 
                 gamma2_temp = u[int(1/dx-2)::int(1/dx-1)]
-                gamma2 = gamma2_temp - gamma2
+                gamma2_km1 = gamma2
+                gamma2 = self.omega*(gamma2_temp - gamma2) + (1-self.omega)*gamma2_km1
+                
                 self.com.send(gamma2,dest=1)
                 u = self.omega*u + (1-self.omega)*self.u_km1
                 self.u_km1=u
@@ -326,7 +330,7 @@ class Room(object):
         # 3 boundaries, size (N+2)*(N+1)
 
         room3= np.zeros((N+2,N+1)) #np.ones((N+2,N+1))
-        room3[1:-1,:-1] = np.flip(U3,axis=0).reshape((N,N))
+        room3[1:-1,:-1] = np.flip(U3.reshape((N,N)),axis=1)
         room3[:,-1] = self.heater_temp
         room3[0,:] = self.wall_temp
         room3[-1,:] = self.wall_temp
