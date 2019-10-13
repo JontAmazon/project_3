@@ -329,7 +329,8 @@ class Room(object):
         room1[:,0] = self.heater_temp
         room1[0,:] = self.wall_temp
         room1[-1,:] = self.wall_temp
-        
+        room1[0,0] = (self.wall_temp+self.heater_temp)/2
+        room1[-1,0] = (self.wall_temp+self.heater_temp)/2
         # assemble room_2
         # six bounadies
         
@@ -343,7 +344,9 @@ class Room(object):
         room2[-1,0]=self.wall_temp # tiny piece of wall between room 2 and 1, should be wall temp not window temp
         room2[N+2:-1,0] = gamma1 # gamma 1 bound
         room2[:N+2,0] = self.wall_temp
-        
+        room2[0,0] = (self.wall_temp+self.heater_temp)/2
+        room2[0,-1] = (self.wall_temp+self.heater_temp)/2
+        room2[-1,0] = (self.wall_temp+self.window_temp)/2
         #assemble_room_3
         # 3 boundaries, size (N+2)*(N+1)
 
@@ -352,7 +355,8 @@ class Room(object):
         room3[:,-1] = self.heater_temp
         room3[0,:] = self.wall_temp
         room3[-1,:] = self.wall_temp
-        
+        room3[0,-1] = (self.wall_temp+self.heater_temp)/2
+        room3[-1,-1] = (self.wall_temp+self.heater_temp)/2
         #Assemble heat map
         
         Map = np.zeros((M+2,N*3+4))
