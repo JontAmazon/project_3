@@ -9,34 +9,37 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.8, iters=100, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
+    def __init__(self, com,room, dx=1/20, omega=0.5, iters=100, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
         self.room = room
-        assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
         self.wall_temp = wall_temp 
         self.heater_temp = heater_temp 
         self.window_temp = window_temp 
-        assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
         self.dx = dx
         self.N = int(round(1/self.dx)) - 1 
         self.omega = omega
-        assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
         self.iters = iters
         self.debug = debug
-        self.u = None
-        if room==2:
-            self.u_km1=np.ones(int((1/dx -1)*(2/dx-1)))*(4*wall_temp+heater_temp+window_temp)/6 #used for relaxation.
-        else:
-            self.u_km1=np.ones(int((1/dx-1)**2))*(3*wall_temp+heater_temp)/4 #used for relaxation.
-        
 
+        assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
+        assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
+        assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
+        
+        self.u = None
+        self.u_km1 = None
+#        if room==2:
+#            self.u_km1=np.ones(int((1/dx -1)*(2/dx-1)))*(4*wall_temp+heater_temp+window_temp)/6 #used for relaxation.
+#        else:
+#            self.u_km1=np.ones(int((1/dx-1)**2))*(3*wall_temp+heater_temp)/4 #used for relaxation.
+
+        
         #Create A (which is constant!) for room 1, 2 or 3.
-        if room == 1 or room == 3:
-            self.create_A_and_b_room1_room3()
         if room == 2:
             self.create_A_and_b_room2()
+        else:
+            self.create_A_and_b_room1_room3()
        
 
 
@@ -222,11 +225,11 @@ class Room(object):
     """
     def solve(self):
         room = self.room
-        dx = self.dx
+        N = self.N
         
         
         if room == 1:
-            gamma1 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
+            gamma1 = np.ones(N)*(40+15+15+15)/4
             gamma1_km1 = gamma1
             self.com.send(gamma1,dest=1)
             if self.debug:
@@ -238,31 +241,38 @@ class Room(object):
                     time_1 = time.time()*1000
                     sys.stdout.flush()
                 gamma1 = self.com.recv(source=1)
+                
                 self.update_b_room1_room3(gamma=gamma1)
 
                 u = sl.solve(self.A,self.b)
-
-                gamma1_temp = u[int(1/dx-2)::int(1/dx-1)]
-                gamma1_km1 = gamma1
-                gamma1 = self.omega*(gamma1_temp + gamma1) + (1-self.omega)*gamma1_km1                                
-                self.com.send(gamma1,dest=1)
                 
-                u = self.omega*u + (1-self.omega)*self.u_km1
+
+                gamma1_temp = u[N-1::N]
+                gamma1_km1 = gamma1
+                if i != 0:
+                    gamma1 = self.omega*(gamma1_temp + gamma1) + (1-self.omega)*gamma1_km1                                
+                    self.com.send(gamma1,dest=1)
+                    u = self.omega*u + (1-self.omega)*self.u_km1
+                else:
+                    self.com.send(gamma1_temp + gamma1,dest=1)
+                    
                 self.u_km1=u
                 
             return u, gamma1
         if room == 2:
+            """     N = int(round(1/self.dx)) - 1      """
             for j in range(self.iters):
                 gamma1 = self.com.recv(source=0)
                 gamma2 = self.com.recv(source=2)
                 
-                self.update_b_room2(gamma1=gamma1,gamma2=gamma2)
+                self.update_b_room2(gamma1=gamma1, gamma2=gamma2)
                 
-                U = sl.solve(self.A,self.b)
+                U = sl.solve(self.A, self.b)
+                
 
-                gamma1_temp = U[int((1/dx -1)**2+(1/dx-1))::int(1/dx-1)]
-                gamma2_temp = U[int(1/dx-2)::int(1/dx-1)]
-                gamma2_temp = gamma2_temp[:int(1/dx-1)]
+                gamma1_temp = U[N**2+N::N]
+                gamma2_temp = U[N-1::N]
+                gamma2_temp = gamma2_temp[:N]
                 # We ignore the fineness of the mesh when computing
                 # the Neumann conditions, since we do the same for 
                 # our A matrices.
@@ -270,29 +280,37 @@ class Room(object):
                 gamma2 = gamma2_temp - gamma2 
                 self.com.send(gamma1,dest=0)
                 self.com.send(gamma2,dest=2)
-                U = self.omega*U + (1-self.omega)*self.u_km1
+                if j != 0:
+                    U = self.omega*U + (1-self.omega)*self.u_km1
                 self.u_km1 = U
+                
                 if self.debug:
                     print('Omega 2 iteration : ' + str(j)+'\n')
                     sys.stdout.flush()
             return U, None
 
         if room == 3:
-            gamma2 = np.ones(int(1/dx - 1))*(40+15+15+15)/4
+            gamma2 = np.ones(N)*(40+15+15+15)/4
             gamma2_km1 = gamma2
             self.com.send(gamma2,dest=1)
             for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
                 self.update_b_room1_room3(gamma=gamma2)
-                u = sl.solve(self.A,self.b)
 
-                gamma2_temp = u[int(1/dx-2)::int(1/dx-1)]
-                gamma2_km1 = gamma2
-                gamma2 = self.omega*(gamma2_temp - gamma2) + (1-self.omega)*gamma2_km1
-                
-                self.com.send(gamma2,dest=1)
-                u = self.omega*u + (1-self.omega)*self.u_km1
+                u = sl.solve(self.A,self.b)
+                  
                 self.u_km1=u
+
+                gamma2_temp = u[N-1::N]
+                gamma2_km1 = gamma2
+                
+                if k != 0:
+                    u = self.omega*u + (1-self.omega)*self.u_km1
+                    gamma2 = self.omega*(gamma2_temp - gamma2) + (1-self.omega)*gamma2_km1
+                    self.com.send(gamma2,dest=1)
+                else:
+                    self.com.send(gamma2_temp-gamma2,dest=1)
+                    
                 if self.debug:
                     print('Omega 3 iteration : ' + str(k)+'\n')
                     sys.stdout.flush()
