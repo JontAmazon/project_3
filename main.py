@@ -38,6 +38,10 @@ if __name__=='__main__':
                         dest='win_temp',
                         type = float,
                         help='Temperature of window')
+    optional_group.add_argument('--debug',
+                        dest='debug',
+                        type = bool,
+                        help='If the user wants to debug the solution progress')
     args = argparser.parse_args()
 
     kwargs = dict()
@@ -56,15 +60,17 @@ if __name__=='__main__':
         kwargs['heater_temp'] = args.heater_temp
     if args.win_temp:
         kwargs['win_temp'] = args.win_temp
+    if args.debug:
+        kwargs['debug'] = args.debug
+        debug = args.debug
 
 
     com = MPI.COMM_WORLD
     room_nr = com.Get_rank() + 1
     nproc = com.Get_size()
     debug = True
-    room_object = room.Room(**kwargs,room=room_nr,com=com,debug = debug)
-    U, gamma = room_object.solve()     
-    print('done with solve')
+    room_object = room.Room(**kwargs,room=room_nr,com=com)
+    U, gamma = room_object.solve()
     
     if room_nr==2:
         #print(U)
