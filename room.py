@@ -211,8 +211,8 @@ class Room(object):
         # Two corners:
         # The above code has overwritten the b-values at two corners. There, the b-vector 
         # should only have contributions from the outer wall:
-        self.b[N-1] = -self.heater_temp
-        self.b[N**2-N] = -self.wall_temp
+        self.b[N-1] -= self.heater_temp
+        self.b[N**2-N] -= self.wall_temp
 
 
 
