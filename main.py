@@ -68,8 +68,9 @@ if __name__=='__main__':
     com = MPI.COMM_WORLD
     room_nr = com.Get_rank() + 1
     nproc = com.Get_size()
-    debug = True
+    debug = False
     room_object = room.Room(**kwargs,room=room_nr,com=com)
+    
     U, gamma = room_object.solve()
     
     if room_nr==2:

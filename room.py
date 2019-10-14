@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.9, iters=100, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
+    def __init__(self, com,room, dx=1/20, omega=0.9, iters=10, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
@@ -227,6 +227,8 @@ class Room(object):
         room = self.room
         N = self.N
         
+        not_finished = True     # We check if we have converged in room 2,
+        tol = 1e-6              # using ||u - u_km1|| < tol
         
         if room == 1:
             gamma1 = np.ones(N)*(40+15+15+15)/4
@@ -241,11 +243,13 @@ class Room(object):
                     time_1 = time.time()*1000
                     sys.stdout.flush()
                 gamma1 = self.com.recv(source=1)
+                if gamma1 is False: #We are done with our iteration.
+                    gamma1 = gamma1_km1
+                    break
                 
                 self.update_b_room1_room3(gamma=gamma1)
 
                 u = sl.solve(self.A,self.b)
-                
 
                 gamma1_temp = u[N-1::N]
                 if i != 0:
@@ -260,16 +264,16 @@ class Room(object):
                 self.u_km1=u
                 
             return u, gamma1
+        
         if room == 2:
-            """     N = int(round(1/self.dx)) - 1      """
-            for j in range(self.iters):
+            j = 0
+            while j < self.iters and not_finished:
                 gamma1 = self.com.recv(source=0)
                 gamma2 = self.com.recv(source=2)
                 
                 self.update_b_room2(gamma1=gamma1, gamma2=gamma2)
                 
                 U = sl.solve(self.A, self.b)
-                
 
                 gamma1_temp = U[N**2+N::N]
                 gamma2_temp = U[N-1::N]
@@ -279,23 +283,47 @@ class Room(object):
                 # our A matrices.
                 gamma1 = gamma1_temp - gamma1 
                 gamma2 = gamma2_temp - gamma2
-                self.com.send(gamma1,dest=0)
-                self.com.send(gamma2,dest=2)
+
+                # Send these gammas to room 1 and 3 -- unless we are done,
+                # in which case we send "False" to communicate this.
+                if j == 0:
+                    self.com.send(gamma1,dest=0)
+                    self.com.send(gamma2,dest=2)
+                else:                    
+                    if sl.norm(U - self.u_km1, 2) < tol:
+                        print('Algorithm finished after ' + str(j) + ' iterations.')
+                        not_finished = False
+                        self.com.send(False, dest=0)
+                        self.com.send(False, dest=2)
+                    else:
+                        self.com.send(gamma1,dest=0)
+                        self.com.send(gamma2,dest=2)
+                        
+                # Relaxation:                        
                 if j != 0:
                     U = self.omega*U + (1-self.omega)*self.u_km1
+                
                 self.u_km1 = U
                 
                 if self.debug:
                     print('Omega 2 iteration : ' + str(j)+'\n')
                     sys.stdout.flush()
+                    
+                j = j + 1
+                
             return U, None
 
         if room == 3:
             gamma2 = np.ones(N)*(40+15+15+15)/4
             gamma2_km1 = gamma2
             self.com.send(gamma2,dest=1)
+            
             for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
+                if gamma2 is False: # We are done with our iteration.
+                    gamma2 = gamma2_km1
+                    break
+                
                 self.update_b_room1_room3(gamma=gamma2)
 
                 u = sl.solve(self.A,self.b)
