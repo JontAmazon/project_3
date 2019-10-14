@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import scipy.linalg as sl
+import scipy.sparse as sp
+from scipy.sparse.linalg import spsolve
 import time
 import sys
 import matplotlib.pyplot as plt
@@ -244,6 +246,7 @@ class Room(object):
                 
                 self.update_b_room1_room3(gamma=gamma1)
 
+                # u  = sl.solve(sp.csc_matrix(self.A,dtype=float).todense(),self.b)
                 u = sl.solve(self.A,self.b)
                 
 
@@ -267,7 +270,7 @@ class Room(object):
                 gamma2 = self.com.recv(source=2)
                 
                 self.update_b_room2(gamma1=gamma1, gamma2=gamma2)
-                
+                # U  = sl.solve(sp.csc_matrix(self.A,dtype=float).todense(),self.b)
                 U = sl.solve(self.A, self.b)
                 
 
@@ -297,7 +300,7 @@ class Room(object):
             for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
                 self.update_b_room1_room3(gamma=gamma2)
-
+                # u = sl.solve(sp.csc_matrix(self.A,dtype=float).todense(),self.b)
                 u = sl.solve(self.A,self.b)
                   
                 self.u_km1=u
