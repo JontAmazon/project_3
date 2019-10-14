@@ -3,6 +3,9 @@
     NOTE: to run a python program with 3 processes:
         mpirun -np 3 python filename.py
 """
+import sys
+import time
+
 import numpy as np
 import scipy.linalg as sl
 from mpi4py import MPI
@@ -10,8 +13,8 @@ import argparse
 
 import room
 
+def parse_input_arguments():
 
-if __name__=='__main__':
     argparser = argparse.ArgumentParser(description='Solve a heat distribution problem for an apartment')
     optional_group = argparser.add_argument_group('Optional')
     optional_group.add_argument('--dx', '-d',
@@ -42,10 +45,14 @@ if __name__=='__main__':
                         dest='debug',
                         type = bool,
                         help='If the user wants to debug the solution progress')
+    optional_group.add_argument('--tol',
+                        dest='tol',
+                        type = float,
+                        help='Stopping condition based on ||u-u_km1||_2 < tol')
     args = argparser.parse_args()
 
     kwargs = dict()
-
+    debug = False
     
     if args.dx:
         frac = args.dx.split('/')
@@ -63,17 +70,32 @@ if __name__=='__main__':
     if args.debug:
         kwargs['debug'] = args.debug
         debug = args.debug
+    if args.tol:
+        kwargs['tol'] = args.tol
 
+    return kwargs
 
-    com = MPI.COMM_WORLD
-    room_nr = com.Get_rank() + 1
-    nproc = com.Get_size()
-    debug = True
-    room_object = room.Room(**kwargs,room=room_nr,com=com)
-    U, gamma = room_object.solve()
+if __name__=='__main__':
     
+    kwargs = parse_input_arguments() # parses_input_arguments
+
+    # Initiate the communication object that the different rooms use.
+    com = MPI.COMM_WORLD
+
+    # Define the room number by obtaining the rank of this process.
+    room_nr = com.Get_rank() + 1
+    room_object = room.Room(**kwargs,room=room_nr,com=com)
+    
+    time1 = time.time()*1000
+    # Var ska vi sova för att vi ska ha mysigt?
+    U, gamma = room_object.solve()
+    time2 = time.time()*1000
+    
+    # Room 2 gathers all the data from the rooms and plots the
+    # temperature distribution throughout the apartment.
     if room_nr==2:
-        #print(U)
+        print('Time taken = ' + str(int(time2-time1))+' [ms]')
+        sys.stdout.flush()
         U1 = com.recv(source=0,tag=1)
         com.send('ping',dest=0)
         gamma1 = com.recv(source=0,tag=2)
@@ -81,18 +103,13 @@ if __name__=='__main__':
         U3 = com.recv(source=2,tag=3)
         com.send('ping',dest=2)
         gamma2 = com.recv(source=2,tag=4)
-        if debug:
-            print('gamma1' + str(gamma1))
-            print('u1 ' + str(U1))
-            print('u2 ' + str(U.astype(int)))
-            print('gamma2' + str(gamma2))
-            print('u3 ' + str(U3))
         room_object.plot_apartment(U1=U1,U2=U,U3=U3,gamma1=gamma1,gamma2=gamma2)       
     else:
         com.send(U,dest=1,tag=room_nr)
+        # If there wasn't a ping recv here, both gamma and u would be sent to 
+        # room 2 at such a close interval such that room 2 could mix them up.
         ping = com.recv(source=1)
         com.send(gamma,dest=1,tag=room_nr+1)
-    #print(U)
 
 
 

@@ -11,7 +11,7 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.9, iters=100, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
+    def __init__(self, com,room, dx=1/20, omega=0.9, iters=100, wall_temp=15, heater_temp=40, window_temp=5, tol=1e-6, debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
@@ -24,6 +24,7 @@ class Room(object):
         self.omega = omega
         self.iters = iters
         self.debug = debug
+        self.tol = tol
 
         assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
         assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
@@ -31,10 +32,6 @@ class Room(object):
         
         self.u = None
         self.u_km1 = None
-#        if room==2:
-#            self.u_km1=np.ones(int((1/dx -1)*(2/dx-1)))*(4*wall_temp+heater_temp+window_temp)/6 #used for relaxation.
-#        else:
-#            self.u_km1=np.ones(int((1/dx-1)**2))*(3*wall_temp+heater_temp)/4 #used for relaxation.
 
         
         #Create A (which is constant!) for room 1, 2 or 3.
@@ -185,7 +182,7 @@ class Room(object):
             b[index] -= self.wall_temp
             index += N
 
-        self.A = A
+        self.A = sp.csc_matrix(A,dtype=float).todense()
         self.b = b        
 
 
@@ -246,8 +243,8 @@ class Room(object):
                 
                 self.update_b_room1_room3(gamma=gamma1)
 
-                # u  = sl.solve(sp.csc_matrix(self.A,dtype=float).todense(),self.b)
-                u = sl.solve(self.A,self.b)
+                u  = sl.solve(self.A,self.b)
+                # u = sl.solve(self.A,self.b)
                 
 
                 gamma1_temp = u[N-1::N]
@@ -270,8 +267,8 @@ class Room(object):
                 gamma2 = self.com.recv(source=2)
                 
                 self.update_b_room2(gamma1=gamma1, gamma2=gamma2)
-                # U  = sl.solve(sp.csc_matrix(self.A,dtype=float).todense(),self.b)
-                U = sl.solve(self.A, self.b)
+                U  = sl.solve(self.A,self.b)
+                # U = sl.solve(self.A, self.b)
                 
 
                 gamma1_temp = U[N**2+N::N]
@@ -300,8 +297,8 @@ class Room(object):
             for k in range(self.iters):
                 gamma2 = self.com.recv(source=1)
                 self.update_b_room1_room3(gamma=gamma2)
-                # u = sl.solve(sp.csc_matrix(self.A,dtype=float).todense(),self.b)
                 u = sl.solve(self.A,self.b)
+                # u = sl.solve(self.A,self.b)
                   
                 self.u_km1=u
 
