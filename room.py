@@ -277,7 +277,7 @@ class Room(object):
                 # the Neumann conditions, since we do the same for 
                 # our A matrices.
                 gamma1 = gamma1_temp - gamma1 
-                gamma2 = gamma2_temp - gamma2 
+                gamma2 = gamma2_temp - gamma2
                 self.com.send(gamma1,dest=0)
                 self.com.send(gamma2,dest=2)
                 if j != 0:
@@ -306,10 +306,10 @@ class Room(object):
                 
                 if k != 0:
                     u = self.omega*u + (1-self.omega)*self.u_km1
-                    gamma2 = self.omega*(gamma2_temp - gamma2) + (1-self.omega)*gamma2_km1
+                    gamma2 = self.omega*(gamma2_temp + gamma2) + (1-self.omega)*gamma2_km1
                     self.com.send(gamma2,dest=1)
                 else:
-                    self.com.send(gamma2_temp-gamma2,dest=1)
+                    self.com.send(gamma2_temp+gamma2,dest=1)
                     
                 if self.debug:
                     print('Omega 3 iteration : ' + str(k)+'\n')
