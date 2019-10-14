@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.5, iters=100, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
+    def __init__(self, com,room, dx=1/20, omega=0.9, iters=100, wall_temp=15, heater_temp=40, window_temp=5,debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
@@ -116,7 +116,7 @@ class Room(object):
             
         #For the corner elements, subtract the self.wall_temp as well
         self.b[N-1] -= self.wall_temp 
-        self.b[-1] -= self.wall_temp
+        self.b[-1] -= self.wall_temp       
             
         
     
@@ -371,14 +371,14 @@ class Room(object):
         # make the plot
         #c = ax.pcolormesh(X, Y, Map, cmap='RdBu', vmin=0, vmax=Map.max(),)
         #y, x = np.mgrid[slice(0, 2 + dx, dx),slice(0, 3 + dx, dx)]
-        cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu_r')
+        #cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu_r')
         
-        #plt.imshow(Map)
-        #plt.colorbar()
-        ax.axis([X.min(), X.max(), Y.min(), Y.max()])
-        fig.colorbar(cf, ax=ax)
+        plt.imshow(Map)
+        plt.colorbar()
+        '''ax.axis([X.min(), X.max(), Y.min(), Y.max()])
+        fig.colorbar(c, ax=ax)
         plt.axis('equal')
-        plt.title('Iterations = ' + str(self.iters) + '. Mesh width = ' + str(self.dx)+'m')
+        plt.title('Iterations = ' + str(self.iters) + '. Mesh width = ' + str(self.dx)+'m')''' 
         plt.show()
 """
     '''       
