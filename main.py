@@ -25,10 +25,10 @@ def parse_input_arguments():
                         dest='omega',
                         type = float,
                         help='Relaxation parameters')
-    optional_group.add_argument('--iters', '-i',
-                        dest='iters',
+    optional_group.add_argument('--max_iters', '-i',
+                        dest='max_iters',
                         type = int,
-                        help='Number of iterations')
+                        help='Maximum number of iterations')
     optional_group.add_argument('--wall_temp',
                         dest='wall_temp',
                         type = float,
@@ -59,8 +59,8 @@ def parse_input_arguments():
         kwargs['dx'] = float(int(frac[0])/int(frac[1]))
     if args.omega:
         kwargs['omega'] = args.omega
-    if args.iters:
-        kwargs['iters'] = args.iters
+    if args.max_iters:
+        kwargs['max_iters'] = args.max_iters
     if args.wall_temp:
         kwargs['wall_temp'] = args.wall_temp
     if args.heater_temp:

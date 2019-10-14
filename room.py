@@ -11,7 +11,7 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.9, iters=100, wall_temp=15, heater_temp=40, window_temp=5, tol=1e-6, debug=False):
+    def __init__(self, com,room, dx=1/20, omega=0.9, max_iters=100, wall_temp=15, heater_temp=40, window_temp=5, tol=1e-6, debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
@@ -22,19 +22,19 @@ class Room(object):
         self.dx = dx
         self.N = int(round(1/self.dx)) - 1 
         self.omega = omega
-        self.iters = iters
+        self.max_iters = max_iters
         self.debug = debug
         self.tol = tol
 
         assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
         assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
-        assert (type(iters)==int), 'The number of iterations, iters, should be an integer.'
+        assert (type(self.max_iters)==int), 'The number of iterations, iters, should be an integer.'
         
         self.u = None
         self.u_km1 = None
 
         
-        #Create A (which is constant!) for room 1, 2 or 3.
+        # Create A (which is constant!) for room 1, 2 or 3.
         if room == 2:
             self.create_A_and_b_room2()
         else:
@@ -46,31 +46,31 @@ class Room(object):
         """ Creates the A- and b-matrix for room 1, the A-matrix being
             constant and the second one being mostly constant.
         """
-        N = self.N    #Number of columns and rows of nodes
-        size = N*N    #Number of unknown nodes.
+        N = self.N    # Number of columns and rows of nodes
+        size = N*N    # Number of unknown nodes.
                 
         """ Create A """
-        #Fill the diagonal and second super/subdiagonals of A
+        # Fill the diagonal and Nth super/subdiagonals of A
         diagonals = np.zeros(size)
         diagonals[0] = -4
         diagonals[N] = 1
         A = sl.toeplitz(diagonals, diagonals)
         
-        #Change the diagonal elements of all right boundary elements to -3 and fill the 
-        #subdiagonal entry with 1 (corresponding to the node on the left hand side 
-        #of the right boundary element element).
+        # Change the diagonal elements of all right boundary elements to -3 and fill the 
+        # subdiagonal entry with 1 (corresponding to the node on the left hand side 
+        # of the right boundary element element).
         for i in range(1, N+1):
             A[i*N - 1, i*N - 1] = -3
             A[i*N - 1, i*N - 2] = 1
     
-        #Change the subdiagonal entries for all left boundary values to 1
-        #(corresponding to the node on the right hand side of the left boundary element)
+        # Change the subdiagonal entries for all left boundary values to 1
+        # (corresponding to the node on the right hand side of the left boundary element)
         for i in range(0, N):
             A[i*N, i*N + 1] = 1
     
-        #Check if our grid contains elements inbetween the corner elements and
-        #in that case fill the super and subdiagonal elements on the same row with 
-        #1, corresponding to the left and right nodes with respect to these elements
+        # Check if our grid contains elements inbetween the corner elements and
+        # in that case fill the super and subdiagonal elements on the same row with 
+        # 1, corresponding to the left and right nodes with respect to these elements
         if N > 2:
             for i in range(0, N):
                 for j in range(i*N + 1, i*N + N - 1):
@@ -83,16 +83,16 @@ class Room(object):
         """
         b = np.zeros(size)
         
-        #Subtract the top boundary nodes with self.wall_temp
+        # Subtract the top boundary nodes with self.wall_temp
         for i in range(0, N):
             b[i] = b[i] - self.wall_temp
         
-        #Subtract the bottom boundary nodes with self.wall_temp
+        # Subtract the bottom boundary nodes with self.wall_temp
         for i in range(size-N,size):
             b[i] = b[i] - self.wall_temp
         
             
-        #Subtract the most-left (near the left boundary elements) with self.heater_temp
+        # Subtract the most-left (near the left boundary elements) with self.heater_temp
         for i in range(0, N):
             b[i*N] = b[i*N] - self.heater_temp
         
@@ -108,12 +108,12 @@ class Room(object):
         """
         N = self.N
         
-        #Subtract the most-right (near the right boundary) nodes with the 
-        #corresponding value given for the node by Neumann-conditions
+        # Subtract the most-right (near the right boundary) nodes with the 
+        # corresponding value given for the node by Neumann-conditions
         for i in range(1, N+1):
             self.b[i*N - 1] =  -gamma[i-1]
             
-        #For the corner elements, subtract the self.wall_temp as well
+        # For the corner elements, subtract the self.wall_temp as well
         self.b[N-1] -= self.wall_temp 
         self.b[-1] -= self.wall_temp       
             
@@ -122,10 +122,10 @@ class Room(object):
     def create_A_and_b_room2(self):
         """ Initializes the matrices A and b for room 2. 
             For room 2, b will change in every iteration, while A is CONSTANT """
-        height = 2                          #heigth of room 2
-        M = int(round(height/self.dx)) - 1  #number of rows of nodes
-        N = self.N                          #number of cols of nodes
-        size = M*N                          #number of unknown nodes
+        height = 2                          # heigth of room 2
+        M = int(round(height/self.dx)) - 1  # number of rows of nodes
+        N = self.N                          # number of cols of nodes
+        size = M*N                          # number of unknown nodes
                 
         """ Create A """
         # The bulk of A is very close to a toeplitz matrix with 5 diagonals.
@@ -146,7 +146,7 @@ class Room(object):
             A[row, row-1] = 0
             row += N
         
-        #SUPER: first zero goes in row N-1.
+        # SUPER: first zero goes in row N-1.
         row = N-1
         for i in range(M-1):
             A[row, row+1] = 0
@@ -181,8 +181,9 @@ class Room(object):
         for i in range(N+1):
             b[index] -= self.wall_temp
             index += N
-
+        print('A' + str(A))
         self.A = sp.csc_matrix(A,dtype=float).todense()
+        print('Dense A' + str(self.A))
         self.b = b        
 
 
@@ -215,10 +216,11 @@ class Room(object):
 
 
 
-    """        
-        In solve(), note that the vectors gamma1 and gamma2 store different things at
-        different times. When a room2-object returns gamma1 and gamma2, they contain
-        the derivatives of the temperature at these two boundaries. When room1-
+    """   
+        _______________________________________MAYBE_README___________________________________________     
+        In solve(), note that the vectors gamma1 and gamma2 store different things depending on      
+        what room uses it. When a room2-object returns gamma1 and gamma2 to room 1 and 3 respectively, 
+        they contain the difference of the temperature at these two boundaries. When room1-
         and room3-objects return these vectors, they store temperature values.
         generates room 1 aka omega_1
     """
@@ -227,28 +229,34 @@ class Room(object):
         N = self.N
 
         if room == 1:
-            gamma1 = np.ones(N)*(40+15+15+15)/4
+            # gamma1 is here (and in room 3) initialized arbitrarily as a first guess.
+            # We chose the average of all the wall temperatures of the room.
+            gamma1 = np.ones(N)*(self.heater_temp + 2*self.wall_temp)/3
             gamma1_km1 = gamma1
             self.com.send(gamma1,dest=1)
             if self.debug:
                 time_1 = time.time()*1000
-            for i in range(self.iters):
+            for i in range(self.max_iters):
                 if self.debug:
                     print('Time since last iteration = ' + str(time.time()*1000-time_1)+'ms')
                     print('Omega 1 iteration : ' + str(i)+'\n')
                     time_1 = time.time()*1000
                     sys.stdout.flush()
                 gamma1 = self.com.recv(source=1)
-                if gamma1 is False: #We are done with our iteration.
+                
+                if gamma1 is False: # We are done with our iteration.
                     gamma1 = gamma1_km1
                     break
                 
+
                 self.update_b_room1_room3(gamma=gamma1)
 
-                u  = sl.solve(self.A,self.b)
-                # u = sl.solve(self.A,self.b)
-                
+                u  = sl.solve(self.A,self.b)                
 
+                # We want to update gamma1 to only contain the temperature values of the boundary nodes
+                # that lie between room 1 and 2, since this will be used for the Dirichlet conditions
+                # in room 2 in the next iteration. This is done by utilizing the Neumann condition and 
+                # gamma1 that was supplied by room 2. 
                 gamma1_temp = u[N-1::N]
                 if i != 0:
                     gamma1 = self.omega*(gamma1_temp + gamma1) + (1-self.omega)*gamma1_km1                                
@@ -264,13 +272,14 @@ class Room(object):
             return u, gamma1
         
         if room == 2:
-            for j in range(self.iters):
+            for j in range(self.max_iters):
                 gamma1 = self.com.recv(source=0)
                 gamma2 = self.com.recv(source=2)
                 
                 self.update_b_room2(gamma1=gamma1, gamma2=gamma2)
+                
                 U  = sl.solve(self.A,self.b)
-                # U = sl.solve(self.A, self.b)
+
                 gamma1_temp = U[N**2+N::N]
                 gamma2_temp = U[N-1::N]
                 gamma2_temp = gamma2_temp[:N]
@@ -287,7 +296,7 @@ class Room(object):
                     self.com.send(gamma2,dest=2)
                 else:                    
                     if sl.norm(U - self.u_km1, 2) < self.tol:
-                        self.iters = j+1
+                        self.max_iters = j+1
                         print('Algorithm finished after ' + str(j+1) + ' iterations.')
                         self.com.send(False, dest=0)
                         self.com.send(False, dest=2)
@@ -305,17 +314,14 @@ class Room(object):
                 if self.debug:
                     print('Omega 2 iteration : ' + str(j)+'\n')
                     sys.stdout.flush()
-                    
-                j = j + 1
-                
             return U, None
 
         if room == 3:
-            gamma2 = np.ones(N)*(40+15+15+15)/4
+            gamma2 = np.ones(N)*(self.heater_temp + 2*self.wall_temp)/3
             gamma2_km1 = gamma2
             self.com.send(gamma2,dest=1)
             
-            for k in range(self.iters):
+            for k in range(self.max_iters):
                 gamma2 = self.com.recv(source=1)
                 if gamma2 is False: # We are done with our iteration.
                     gamma2 = gamma2_km1
@@ -323,9 +329,7 @@ class Room(object):
                 
                 self.update_b_room1_room3(gamma=gamma2)
                 u = sl.solve(self.A,self.b)
-                # u = sl.solve(self.A,self.b)
                   
-                self.u_km1=u
 
                 gamma2_temp = u[N-1::N]
                 
@@ -340,7 +344,8 @@ class Room(object):
                 if self.debug:
                     print('Omega 3 iteration : ' + str(k)+'\n')
                     sys.stdout.flush()
-                    
+                
+                self.u_km1=u
                 gamma2_km1 = gamma2
             return u, gamma2
         
@@ -365,11 +370,9 @@ class Room(object):
         room2= np.zeros((M+2,N+2))
         room2[1:-1,1:-1] = U2.reshape((M,N))
         room2[0,:]= self.heater_temp # upper boundary
-        room2[0,-1]=self.wall_temp # tiny piece of wall between room 2 and 3, should be wall temp not heater temp
         room2[1:N+1,-1] = gamma2 # gamma 2 boundary
         room2[N+1:,-1] = self.wall_temp 
         room2[-1,:] = self.window_temp
-        room2[-1,0]=self.wall_temp # tiny piece of wall between room 2 and 1, should be wall temp not window temp
         room2[N+2:-1,0] = gamma1 # gamma 1 bound
         room2[:N+2,0] = self.wall_temp
         room2[0,0] = (self.wall_temp+self.heater_temp)/2
@@ -391,9 +394,7 @@ class Room(object):
         Map[-(N+2):,:N+1] = room1 #room 1
         Map[:,N+1:N*2+3] = room2 # room 2
         Map[0:N+2,N*2+3:] = room3 # room 3
-        #Map[-(N+2)+2:-2,N+1-2] = 10 # marker in room 1
-        #Map = np.vstack((Map,np.zeros((1,Map.shape[1]))))
-        #Map = np.hstack((Map,np.zeros((Map.shape[0],1))))
+        
         X, Y = np.meshgrid(np.linspace(-dx/2, 3+dx/2, (N*3+4)),np.linspace(2+dx/2, -dx/2, (M+2)))
         levels = MaxNLocator(nbins=50).tick_values(Map.min(), Map.max())
         # make the plot
@@ -401,12 +402,12 @@ class Room(object):
         #y, x = np.mgrid[slice(0, 2 + dx, dx),slice(0, 3 + dx, dx)]
         cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu_r')
         
-        # plt.imshow(Map)
+        # plt.imshow(Map) # Second plot
         # plt.colorbar()
         ax.axis([X.min(), X.max(), Y.min(), Y.max()])
         fig.colorbar(cf, ax=ax)
         plt.axis('equal')
-        plt.title('Iterations = ' + str(self.iters) + '. Mesh width = ' + str(self.dx)+'m') 
+        plt.title('Iterations = ' + str(self.max_iters) + '. Mesh width = ' + str(self.dx)+'m') 
         plt.show()
 """
     '''       
