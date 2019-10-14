@@ -248,14 +248,15 @@ class Room(object):
                 
 
                 gamma1_temp = u[N-1::N]
-                gamma1_km1 = gamma1
                 if i != 0:
                     gamma1 = self.omega*(gamma1_temp + gamma1) + (1-self.omega)*gamma1_km1                                
                     self.com.send(gamma1,dest=1)
                     u = self.omega*u + (1-self.omega)*self.u_km1
                 else:
-                    self.com.send(gamma1_temp + gamma1,dest=1)
+                    gamma1 = gamma1_temp + gamma1
+                    self.com.send(gamma1,dest=1)
                     
+                gamma1_km1 = gamma1
                 self.u_km1=u
                 
             return u, gamma1
@@ -302,18 +303,20 @@ class Room(object):
                 self.u_km1=u
 
                 gamma2_temp = u[N-1::N]
-                gamma2_km1 = gamma2
                 
                 if k != 0:
                     u = self.omega*u + (1-self.omega)*self.u_km1
                     gamma2 = self.omega*(gamma2_temp + gamma2) + (1-self.omega)*gamma2_km1
                     self.com.send(gamma2,dest=1)
                 else:
-                    self.com.send(gamma2_temp+gamma2,dest=1)
+                    gamma2 = gamma2_temp +gamma2
+                    self.com.send(gamma2,dest=1)
                     
                 if self.debug:
                     print('Omega 3 iteration : ' + str(k)+'\n')
                     sys.stdout.flush()
+                    
+                gamma2_km1 = gamma2
             return u, gamma2
         
     def plot_apartment(self,U1,U2,U3,gamma1,gamma2):
@@ -371,14 +374,14 @@ class Room(object):
         # make the plot
         #c = ax.pcolormesh(X, Y, Map, cmap='RdBu', vmin=0, vmax=Map.max(),)
         #y, x = np.mgrid[slice(0, 2 + dx, dx),slice(0, 3 + dx, dx)]
-        #cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu_r')
+        cf = ax.contourf(X[:, :], Y[:, :], Map,levels=levels, cmap='RdBu_r')
         
-        plt.imshow(Map)
-        plt.colorbar()
-        '''ax.axis([X.min(), X.max(), Y.min(), Y.max()])
-        fig.colorbar(c, ax=ax)
+        # plt.imshow(Map)
+        # plt.colorbar()
+        ax.axis([X.min(), X.max(), Y.min(), Y.max()])
+        fig.colorbar(cf, ax=ax)
         plt.axis('equal')
-        plt.title('Iterations = ' + str(self.iters) + '. Mesh width = ' + str(self.dx)+'m')''' 
+        plt.title('Iterations = ' + str(self.iters) + '. Mesh width = ' + str(self.dx)+'m') 
         plt.show()
 """
     '''       
