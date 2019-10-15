@@ -28,7 +28,7 @@ class Room(object):
 
         assert (room < 4),'The rank is too high, you might be trying to initiate too many instances'
         assert (dx < 1/2), 'The mesh width, dx, should be smaller than 1/2.'
-        assert (type(self.max_iters)==int), 'The number of iterations, iters, should be an integer.'
+        assert (type(self.max_iters)==int), 'The number of iterations, max_iters, should be an integer.'
         
         self.u = None
         self.u_km1 = None

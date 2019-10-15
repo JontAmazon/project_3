@@ -56,7 +56,14 @@ def parse_input_arguments():
     
     if args.dx:
         frac = args.dx.split('/')
-        kwargs['dx'] = float(int(frac[0])/int(frac[1]))
+        if len(frac) == 2:
+            kwargs['dx'] = float(int(frac[0])/int(frac[1]))
+        elif len(args.dx.split('.')) == 2:
+            kwargs['dx'] = float(args.dx.split('.')[1]/10)
+        elif len(args.dx.split(',')) == 2:
+            kwargs['dx'] = float(args.dx.split(',')[1]/10)
+        else:
+            assert(len(frac)==2), 'dx needs to be of the format "a/b", "0,x" or "0.x"'
     if args.omega:
         kwargs['omega'] = args.omega
     if args.max_iters:
