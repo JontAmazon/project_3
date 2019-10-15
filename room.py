@@ -11,14 +11,14 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.9, max_iters=100, wall_temp=15, heater_temp=40, window_temp=5, tol=1e-6, debug=False):
+    def __init__(self, com,room, dx=1/20, omega=0.9, max_iters=100, wall_temp=15, heater_temp=40, win_temp=5, tol=1e-6, debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
         self.room = room
         self.wall_temp = wall_temp 
         self.heater_temp = heater_temp 
-        self.window_temp = window_temp 
+        self.window_temp = win_temp 
         self.dx = dx
         self.N = int(round(1/self.dx)) - 1 
         self.omega = omega
