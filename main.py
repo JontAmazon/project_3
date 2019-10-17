@@ -17,10 +17,11 @@ def parse_input_arguments():
 
     argparser = argparse.ArgumentParser(description='Solve a heat distribution problem for an apartment')
     optional_group = argparser.add_argument_group('Optional')
-    optional_group.add_argument('--dx', '-d',
+    mandatory_group = argparser.add_argument_group('Mandatory') # dx ska nog vara här!
+    mandatory_group.add_argument('--dx', '-d',
                         dest='dx',
                         type=str,
-                        help='Distance between grid points')
+                        help='Distance between grid points. Needs to be specified in the form of a fraction 1/x.')
     optional_group.add_argument('--omega', '-o',
                         dest='omega',
                         type = float,
@@ -56,14 +57,11 @@ def parse_input_arguments():
     
     if args.dx:
         frac = args.dx.split('/')
-        if len(frac) == 2:
-            kwargs['dx'] = float(int(frac[0])/int(frac[1]))
-        elif len(args.dx.split('.')) == 2:
-            kwargs['dx'] = float(args.dx.split('.')[1]/10)
-        elif len(args.dx.split(',')) == 2:
-            kwargs['dx'] = float(args.dx.split(',')[1]/10)
-        else:
-            assert(len(frac)==2), 'dx needs to be of the format "a/b", "0,x" or "0.x"'
+        assert(len(frac)==2), 'dx needs to be of the format "1/x"'
+        kwargs['dx'] = float(int(frac[0])/int(frac[1]))
+    else:
+        argparser.print_help()
+        sys.stdout.flush()
     if args.omega:
         kwargs['omega'] = args.omega
     if args.max_iters:
@@ -94,7 +92,6 @@ if __name__=='__main__':
     room_object = room.Room(**kwargs,room=room_nr,com=com)
     
     time1 = time.time()*1000
-    # Var ska vi sova för att vi ska ha mysigt?
     U, gamma = room_object.solve()
     time2 = time.time()*1000
     
@@ -118,6 +115,20 @@ if __name__=='__main__':
         ping = com.recv(source=1)
         com.send(gamma,dest=1,tag=room_nr+1)
 
+
+'''
+HXCHV
+
+
+
+A[x][y] är mycket långsammare än A[x,y].
+
+assert för tester, men raise exception för fel. Bör använda
+raise för att notifiera användaren för felhantering.
+
+Kan vara bättre att ha "hela" A-matrisen då strukturen blir mer komprimerbar/glesare.
+
+'''
 
 
 

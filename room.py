@@ -11,7 +11,7 @@ from matplotlib.ticker import MaxNLocator
 
 class Room(object):
     
-    def __init__(self, com,room, dx=1/20, omega=0.9, max_iters=100, wall_temp=15, heater_temp=40, win_temp=5, tol=1e-6, debug=False):
+    def __init__(self, com,room, dx, omega=0.9, max_iters=1000, wall_temp=15, heater_temp=40, win_temp=5, tol=1e-6, debug=False):
         ''' Initalizes the room object for the corresponding room number.
         '''
         self.com = com
@@ -82,7 +82,7 @@ class Room(object):
             room 2)
         """
         b = np.zeros(size)
-        
+
         # Subtract the top boundary nodes with self.wall_temp
         for i in range(0, N):
             b[i] = b[i] - self.wall_temp
@@ -96,7 +96,7 @@ class Room(object):
         for i in range(0, N):
             b[i*N] = b[i*N] - self.heater_temp
         
-        self.A = A
+        self.A = sp.csc_matrix(A,dtype=float).todense()
         self.b = b
     
     
@@ -181,9 +181,7 @@ class Room(object):
         for i in range(N+1):
             b[index] -= self.wall_temp
             index += N
-        print('A' + str(A))
         self.A = sp.csc_matrix(A,dtype=float).todense()
-        print('Dense A' + str(self.A))
         self.b = b        
 
 
